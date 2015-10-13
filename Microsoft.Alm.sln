@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.23207.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cli-CredentialHelper", "Cli-CredentialHelper\Cli-CredentialHelper.csproj", "{62F52119-63D4-40A8-A9DF-F1C4B473308A}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Alm.Git", "Microsoft.Alm.Git\Microsoft.Alm.Git.csproj", "{4827C16D-5C58-406D-AB3F-3700BB0D06FE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Alm.Git.Test", "Microsoft.Alm.Git.Test\Microsoft.Alm.Git.Test.csproj", "{5C9EF428-0D26-436A-A8BB-32E58357B36D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cli-Sparse", "Cli-Sparse\Cli-Sparse.csproj", "{016F5F26-8BBC-4D50-9E04-199C7B599267}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{5C9EF428-0D26-436A-A8BB-32E58357B36D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C9EF428-0D26-436A-A8BB-32E58357B36D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C9EF428-0D26-436A-A8BB-32E58357B36D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{016F5F26-8BBC-4D50-9E04-199C7B599267}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{016F5F26-8BBC-4D50-9E04-199C7B599267}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{016F5F26-8BBC-4D50-9E04-199C7B599267}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{016F5F26-8BBC-4D50-9E04-199C7B599267}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

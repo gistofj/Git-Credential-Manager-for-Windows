@@ -53,6 +53,13 @@ namespace Microsoft.Alm.Git
             return false;
         }
 
+        /// <summary>
+        /// Finds and returns information about a specific installation of Git.
+        /// </summary>
+        /// <param name="path">Path to the installation.</param>
+        /// <param name="distro">The expected distribution of Git.</param>
+        /// <param name="installation">Information about the installation if successful.</param>
+        /// <returns><see langword="True"/> if successful; <see langword="false"/> otherwise.</returns>
         public static bool FindGitInstallation(string path, KnownGitDistribution distro, out GitInstallation installation)
         {
             installation = new GitInstallation(path, distro);
@@ -325,6 +332,49 @@ namespace Microsoft.Alm.Git
                 if (file != null && file.Exists)
                 {
                     path = file.FullName;
+                    return true;
+                }
+            }
+
+            path = null;
+            return false;
+        }
+
+        public static bool GitXdgConfig(out string path)
+        {
+            const string GitFolderName = "Git";
+            const string DotConfigName = ".config";
+            const string XdgFileName = "config";
+            const string VariableName = "HOME";
+
+            Trace.WriteLine("Where::GitXdgConfig");
+
+            string homePath = null;
+            if ((homePath = Environment.GetEnvironmentVariable(VariableName)) != null)
+            {
+                Trace.WriteLine("   %HOME% = '" + homePath + "'.");
+
+                string xdgPath = Path.Combine(homePath, DotConfigName, GitFolderName, XdgFileName);
+
+                if (File.Exists(xdgPath))
+                {
+                    Trace.WriteLine("   Xdg found at '" + xdgPath + "'.");
+
+                    path = xdgPath;
+                    return true;
+                }
+            }
+
+            string appdataPath = null;
+            if ((appdataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)) != null)
+            {
+                string xdgPath = Path.Combine(appdataPath, GitFolderName, XdgFileName);
+
+                if (File.Exists(xdgPath))
+                {
+                    Trace.WriteLine("   Xdg found at '" + xdgPath + "'.");
+
+                    path = xdgPath;
                     return true;
                 }
             }

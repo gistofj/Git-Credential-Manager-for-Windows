@@ -557,8 +557,8 @@ namespace Microsoft.Alm.CredentialHelper
 
             Trace.WriteLine("Program::LoadOperationArguments");
 
-            Configuration config = new Configuration();
-            Configuration.Entry entry;
+            GitConfiguration config = new GitConfiguration();
+            GitConfiguration.Entry entry;
 
             if (config.TryGetEntry(ConfigPrefix, operationArguments.TargetUri, ConfigAuthortyKey, out entry))
             {

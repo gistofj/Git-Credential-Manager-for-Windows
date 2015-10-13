@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Microsoft.Alm.Git.Test
 {
     /// <summary>
-    /// A class to test <see cref="Configuration"/>.
+    /// A class to test <see cref="GitConfiguration"/>.
     /// </summary>
     [TestClass]
     public class ConfigurationTests
@@ -60,10 +60,10 @@ namespace Microsoft.Alm.Git.Test
             var me = this.GetType();
             var us = me.Assembly;
 
-            using (var rs = us.GetManifestResourceStream(me, "sample.gitconfig"))
-            using (var sr = new StreamReader(rs))
+            using (var stream = us.GetManifestResourceStream(me, "sample.gitconfig"))
+            using (var reader = new StreamReader(stream))
             {
-                Configuration.ParseGitConfig(sr, values);
+                GitConfiguration.ParseGitConfig(reader, values);
             }
 
             Assert.AreEqual(36, values.Count);
@@ -75,9 +75,9 @@ namespace Microsoft.Alm.Git.Test
         {
             var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            using (var sr = new StringReader(input))
+            using (var reader = new StringReader(input))
             {
-                Configuration.ParseGitConfig(sr, values);
+                GitConfiguration.ParseGitConfig(reader, values);
             }
             return values;
         }
@@ -97,17 +97,17 @@ namespace Microsoft.Alm.Git.Test
                     "[credential]\n" +
                     "    helper = manager\n" +
                     "";
-            Configuration cut;
+            GitConfiguration cut;
 
             using (var sr = new StringReader(input))
             {
-                cut = new Configuration(sr);
+                cut = new GitConfiguration(sr);
             }
 
             Assert.AreEqual(true, cut.ContainsKey("CoRe.AuToCrLf"));
             Assert.AreEqual("false", cut["CoRe.AuToCrLf"]);
 
-            Configuration.Entry entry;
+            GitConfiguration.Entry entry;
             Assert.AreEqual(true, cut.TryGetEntry("core", (string)null, "autocrlf", out entry));
             Assert.AreEqual("false", entry.Value);
 

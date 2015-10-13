@@ -168,14 +168,14 @@ namespace Microsoft.Alm.CredentialHelper
                 }
 
                 // only update the system configs if using a custom path
-                Configuration.Type types = String.IsNullOrWhiteSpace(_customPath)
-                    ? Configuration.Type.Global | Configuration.Type.System
-                    : Configuration.Type.System;
+                GitConfiguration.Type types = String.IsNullOrWhiteSpace(_customPath)
+                    ? GitConfiguration.Type.Global | GitConfiguration.Type.System
+                    : GitConfiguration.Type.System;
 
-                Configuration.Type updateTypes;
+                GitConfiguration.Type updateTypes;
                 if (SetGitConfig(installations, GitConfigAction.Set, types, out updateTypes))
                 {
-                    if ((updateTypes & Configuration.Type.System) == Configuration.Type.System)
+                    if ((updateTypes & GitConfiguration.Type.System) == GitConfiguration.Type.System)
                     {
                         Console.Out.WriteLine();
                         Console.Out.WriteLine("Updated your /etc/gitconfig [git config --system]");
@@ -197,7 +197,7 @@ namespace Microsoft.Alm.CredentialHelper
                         Console.Error.WriteLine("Unable to update your /etc/gitconfig correctly.");
                     }
 
-                    if ((updateTypes & Configuration.Type.Global) == Configuration.Type.Global)
+                    if ((updateTypes & GitConfiguration.Type.Global) == GitConfiguration.Type.Global)
                     {
                         Console.Out.WriteLine("Updated your ~/.gitconfig [git config --global]");
                     }
@@ -326,14 +326,14 @@ namespace Microsoft.Alm.CredentialHelper
                 }
 
                 // only update the system configs if using a custom path
-                Configuration.Type types = String.IsNullOrWhiteSpace(_customPath)
-                    ? Configuration.Type.Global | Configuration.Type.System
-                    : Configuration.Type.System;
+                GitConfiguration.Type types = String.IsNullOrWhiteSpace(_customPath)
+                    ? GitConfiguration.Type.Global | GitConfiguration.Type.System
+                    : GitConfiguration.Type.System;
 
-                Configuration.Type updateTypes;
+                GitConfiguration.Type updateTypes;
                 if (SetGitConfig(installations, GitConfigAction.Unset, types, out updateTypes))
                 {
-                    if ((updateTypes & Configuration.Type.System) == Configuration.Type.System)
+                    if ((updateTypes & GitConfiguration.Type.System) == GitConfiguration.Type.System)
                     {
                         Console.Out.WriteLine();
                         Console.Out.WriteLine("Updated your /etc/gitconfig [git config --system]");
@@ -355,7 +355,7 @@ namespace Microsoft.Alm.CredentialHelper
                         Console.Error.WriteLine("Unable to update your /etc/gitconfig correctly.");
                     }
 
-                    if ((updateTypes & Configuration.Type.Global) == Configuration.Type.Global)
+                    if ((updateTypes & GitConfiguration.Type.Global) == GitConfiguration.Type.Global)
                     {
                         Console.Out.WriteLine("Updated your ~/.gitconfig [git config --global]");
                     }
@@ -411,12 +411,12 @@ namespace Microsoft.Alm.CredentialHelper
             }
         }
 
-        public bool SetGitConfig(List<GitInstallation> installations, GitConfigAction action, Configuration.Type type, out Configuration.Type updated)
+        public bool SetGitConfig(List<GitInstallation> installations, GitConfigAction action, GitConfiguration.Type type, out GitConfiguration.Type updated)
         {
             Trace.WriteLine("Installer::SetGitConfig");
             Trace.WriteLine("   action = " + action + ".");
 
-            updated = Configuration.Type.None;
+            updated = GitConfiguration.Type.None;
 
             if (installations == null && !Where.FindGitInstallations(out installations))
             {
@@ -424,7 +424,7 @@ namespace Microsoft.Alm.CredentialHelper
                 return false;
             }
 
-            if ((type & Configuration.Type.Global) == Configuration.Type.Global)
+            if ((type & GitConfiguration.Type.Global) == GitConfiguration.Type.Global)
             {
                 // the 0 entry in the installations list is the "preferred" instance of Git
                 string gitCmdPath = installations[0].Cmd;
@@ -436,7 +436,7 @@ namespace Microsoft.Alm.CredentialHelper
                 {
                     Trace.WriteLine("   updating ~/.gitconfig succeeded.");
 
-                    updated |= Configuration.Type.Global;
+                    updated |= GitConfiguration.Type.Global;
                 }
                 else
                 {
@@ -449,7 +449,7 @@ namespace Microsoft.Alm.CredentialHelper
                 }
             }
 
-            if ((type & Configuration.Type.System) == Configuration.Type.System)
+            if ((type & GitConfiguration.Type.System) == GitConfiguration.Type.System)
             {
                 string systemCmd = action == GitConfigAction.Set
                     ? "config --system credential.helper manager"
@@ -473,7 +473,7 @@ namespace Microsoft.Alm.CredentialHelper
 
                 if (successCount == installations.Count)
                 {
-                    updated |= Configuration.Type.System;
+                    updated |= GitConfiguration.Type.System;
                 }
                 else
                 {

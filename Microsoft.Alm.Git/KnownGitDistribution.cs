@@ -3,6 +3,10 @@
     public enum KnownGitDistribution
     {
         /// <summary>
+        /// An unknown distribution of Git
+        /// </summary>
+        Unknown,
+        /// <summary>
         /// 32-bit Git for Windows 1.*
         /// </summary>
         GitForWindows32v1,
