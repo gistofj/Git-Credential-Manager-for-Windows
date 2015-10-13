@@ -52,6 +52,7 @@
     <Compile Include="GitProcessOptions.cs" />
     <Compile Include="KnownGitDistribution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SparsePath.cs" />
     <Compile Include="Where.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

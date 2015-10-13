@@ -328,6 +328,12 @@ namespace Microsoft.Alm.Git
             Debug.Assert(command != null, "The `command` parameter is null.");
             Debug.Assert(workingDirectory != null, "The `workingDirectory` parameter is null.");
 
+            // strip off any leading "git" values as they're not needed/wanted
+            if (command.StartsWith("git", StringComparison.OrdinalIgnoreCase))
+            {
+                command = command.Substring(3, command.Length - 3);
+            }
+
             var options = new GitProcessOptions()
             {
                 Command = command,

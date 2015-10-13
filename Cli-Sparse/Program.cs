@@ -206,19 +206,19 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             {
                 Out.WriteLine("sparse enabled.");
 
-                List<string> values;
-                if (ReadSparseConfig(config, out values))
+                List<SparsePath> paths;
+                if (ReadSparseConfig(config, out paths))
                 {
-                    foreach (string value in values)
+                    foreach (string path in paths)
                     {
-                        if (String.IsNullOrEmpty(value))
+                        if (String.IsNullOrEmpty(path))
                             continue;
 
-                        if (value[0] != '!')
+                        if (path[0] != '!')
                         {
                             Out.Write(" ");
                         }
-                        Out.WriteLine(value);
+                        Out.WriteLine(path);
                     }
                 }
             }
@@ -235,9 +235,9 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
         internal bool Init(string[] args, GitConfiguration config)
         {
-            const string ArgsNotName = "--not";
-            const string ArgsMapName = "--map";
+            const string ArgsForceName = "--force";
             const string ArgsSpecName = "--spec";
+            const string DefaultSparseValue = "*";
 
             Debug.Assert(args != null, "The `args` parameter is null.");
             Debug.Assert(config != null, "The `config` parameter is null.");
@@ -245,171 +245,88 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             Trace.WriteLine("Program::Init");
 
             string specPath = null;
-            HashSet<string> maps = null;
-            HashSet<string> nots = null;
+            bool force = false;
 
-            for (int i = 0; i < args.Length; i++)
+            for (int i = 0; i < args.Length; i += 1)
             {
-                if (String.Equals(args[i], ArgsMapName, StringComparison.OrdinalIgnoreCase))
+                if (String.Equals(args[i], ArgsSpecName, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (args.Length < i + 1)
+                    if (args.Length > i + 1)
                     {
-                        if (maps == null)
-                        {
-                            maps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        }
+                        i += 1;
+                        specPath = args[i];
 
-                        string path = args[i];
-                        maps.Add(path);
-                    }
-                    else
-                    {
-                        Err.WriteLine("Fatal: no path specified for " + ArgsMapName + ".");
-                        return false;
-                    }
-                }
-                else if (String.Equals(args[i], ArgsNotName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (args.Length < i + 1)
-                    {
-                        if (nots == null)
+                        if (!File.Exists(specPath))
                         {
-                            nots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        }
-
-                        string path = args[i];
-                        nots.Add(path);
-                    }
-                    else
-                    {
-                        Err.WriteLine("Fatal: no path specified for " + ArgsNotName + ".");
-                        return false;
-                    }
-                }
-                else if (String.Equals(args[i], ArgsSpecName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (specPath == null)
-                    {
-                        if (args.Length < i + 1)
-                        {
-                            i += 1;
-                            specPath = args[i];
-                        }
-                        else
-                        {
-                            Err.WriteLine("Fatal: no path specified for " + ArgsSpecName + ".");
+                            Err.WriteLine("Fatal: " + ArgsSpecName + " '{0}' not found.", specPath);
                             return false;
                         }
                     }
                     else
                     {
-                        Err.WriteLine("Fatal: " + ArgsSpecName + " cannot be specified more than once.");
+                        Err.WriteLine("Fatal: no path specified for " + ArgsSpecName + ".");
                         return false;
+                    }
+                }
+                else if (String.Equals(args[i], ArgsForceName, StringComparison.OrdinalIgnoreCase))
+                {
+                    force = true;
+                }
+                else
+                {
+                    Err.WriteLine("Fatal: Unknown option {0}.", args[i]);
+                    return false;
+                }
+            }
+
+            if (IsEnabled(config) && !force)
+            {
+                Err.WriteLine("Fatal: sparce-checkout already enabled.");
+                Err.WriteLine("       use --force option to override this error.");
+                return false;
+            }
+
+            HashSet<SparsePath> values = new HashSet<SparsePath>();
+            values.Add(DefaultSparseValue);
+
+            List<SparsePath> entries;
+            List<string> refs;
+
+            if (specPath != null)
+            {
+                var specFile = new FileInfo(specPath);
+
+                if (ReadSpecFile(specFile, out entries, out refs))
+                {
+                    foreach (string entry in entries)
+                    {
+                        values.Add(entry);
                     }
                 }
                 else
                 {
-                    Err.WriteLine("Fatal: Unknown argument " + args[i]);
+                    Err.WriteLine("Fatal: Unable to parse " + ArgsSpecName + " '{0}'.", specPath);
                     return false;
                 }
             }
 
-            if (String.IsNullOrEmpty(specPath))
-            {
-                maps = maps ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                nots = nots ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                if (maps.Count == 0)
-                {
-                    Out.WriteLine("warning: no paths were added to the sparse-checkout configuration.");
-                    Out.WriteLine("         defaulting to mapping everything.");
-
-                    maps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    maps.Add("/*");
-                }
-
-                {
-                    List<string> values;
-                    if (!ReadSparseConfig(config, out values))
-                    {
-                        values = new List<string>();
-                    }
-
-                    foreach (string value in values)
-                    {
-                        if (String.IsNullOrEmpty(value))
-                            continue;
-
-                        if (value[0] == '!')
-                        {
-                            nots.Add(value);
-                        }
-                        else
-                        {
-                            maps.Add(value);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                FileInfo specFile = new FileInfo(specPath);
-
-                if (!specFile.Exists)
-                {
-                    Err.WriteLine("Fatal: {0} '{1}' cannot be found.", ArgsSpecName, specFile.FullName);
-                    return false;
-                }
-
-                List<string> values;
-                if (!ReadSparseConfig(config, out values))
-                {
-                    values = new List<string>();
-
-                    foreach (string item in values)
-                    {
-                        if (String.IsNullOrWhiteSpace(item))
-                            continue;
-
-                        if (item[0] == '!')
-                        {
-                            nots.Add(item);
-                        }
-                        else
-                        {
-                            nots.Add(item);
-                        }
-                    }
-                }
-
-                List<string> refspecs;
-                if (ReadSpecFile(specFile, out values, out refspecs))
-                {
-                    foreach (string item in values)
-                    {
-                        if (String.IsNullOrWhiteSpace(item))
-                            continue;
-
-                        if (item[0] == '!')
-                        {
-                            nots.Add(item);
-                        }
-                        else
-                        {
-                            nots.Add(item);
-                        }
-                    }
-                }
-            }
-
-            if (!WriteSparseConfig(config, maps, nots))
+            if (!WriteSparseConfig(config, values))
             {
                 Err.WriteLine("Fatal: Error writing to the sparse-checkout file.");
+                return false;
             }
 
             if (GitProcess.Run("config --local " + ConfigValueName + " true", Environment.CurrentDirectory, 0))
             {
                 Out.WriteLine("git {0} enabled.", FeatureName);
+
+                if (!GitProcess.Run("reset", Environment.CurrentDirectory, 0)
+                    || !GitProcess.Run("read-tree -mu HEAD", Environment.CurrentDirectory, 0))
+                {
+                    Err.WriteLine("Fatal: Error occured when updating the resposiory index.");
+                    Err.WriteLine("       Use of `git reset` and `git update-index --really-refresh` can be helpful.");
+                    return false;
+                }
             }
 
             return true;
@@ -425,7 +342,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             return true;
         }
 
-        internal static bool ReadSparseConfig(FileInfo sparseFile, out List<string> values)
+        internal static bool ReadSparseConfig(FileInfo sparseFile, out List<SparsePath> paths)
         {
             Debug.Assert(sparseFile != null, "The `sparseFile` parameter is null.");
             Debug.Assert(sparseFile.Exists, "The `sparseFile` parameter does not exist.");
@@ -434,7 +351,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
             if (sparseFile.Exists)
             {
-                values = new List<string>();
+                paths = new List<SparsePath>();
 
                 Trace.WriteLine("   " + ConfigFileName + " found.");
 
@@ -444,22 +361,22 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                     string line = null;
                     while ((line = reader.ReadLine()) != null)
                     {
-                        values.Add(line);
+                        paths.Add(line);
                     }
                 }
 
-                Trace.WriteLine("   " + values.Count + " entries found.");
+                Trace.WriteLine("   " + paths.Count + " entries found.");
 
                 return true;
             }
 
             Trace.WriteLine("   " + ConfigFileName + " not found.");
 
-            values = null;
+            paths = null;
             return false;
         }
 
-        internal static bool ReadSparseConfig(GitConfiguration config, out List<string> values)
+        internal static bool ReadSparseConfig(GitConfiguration config, out List<SparsePath> paths)
         {
             const string DotGitInfoFolderName = "info";
 
@@ -479,7 +396,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                     FileInfo sparseFile = new FileInfo(configPath);
 
                     if (sparseFile.Exists)
-                        return ReadSparseConfig(sparseFile, out values);
+                        return ReadSparseConfig(sparseFile, out paths);
                 }
 
                 Trace.WriteLine("   " + ConfigFileName + " not found.");
@@ -489,11 +406,11 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                 Trace.WriteLine("   no local config detected, not a git repo.");
             }
 
-            values = null;
+            paths = null;
             return false;
         }
 
-        internal static bool ReadSpecFile(FileInfo specFile, out List<string> values, out List<string> refspec)
+        internal static bool ReadSpecFile(FileInfo specFile, out List<SparsePath> paths, out List<string> refs)
         {
             Debug.Assert(specFile != null, "The `specFile` parameter is null.");
             Debug.Assert(specFile.Exists, "The `specFile` parameter do not exist.");
@@ -502,8 +419,8 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
             if (specFile.Exists)
             {
-                values = new List<string>();
-                refspec = new List<string>();
+                paths = new List<SparsePath>();
+                refs = new List<string>();
 
                 Trace.WriteLine("   '" + specFile.FullName + "' found.");
 
@@ -525,25 +442,25 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                         if ((match = Regex.Match(line, @"^fetch=+(.+)$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)).Success)
                         {
                             string value = match.Groups[1].Value;
-                            refspec.Add(value);
+                            refs.Add(value);
 
                             Trace.WriteLine(" ref+=" + value);
                         }
                         else
                         {
-                            values.Add(line);
+                            paths.Add(line);
 
                             Trace.WriteLine("   " + line);
                         }
                     }
                 }
 
-                Trace.WriteLine("   " + values.Count + " entries found.");
-                Trace.WriteLine("   " + refspec.Count + " refspec found.");
+                Trace.WriteLine("   " + paths.Count + " entries found.");
+                Trace.WriteLine("   " + refs.Count + " refspec found.");
             }
 
-            values = null;
-            refspec = null;
+            paths = null;
+            refs = null;
             return false;
         }
 
@@ -555,11 +472,10 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                 && String.Equals(config[ConfigValueName], "true", StringComparison.OrdinalIgnoreCase);
         }
 
-        internal static bool WriteSparseConfig(FileInfo sparseFile, IEnumerable<string> maps, IEnumerable<string> nots)
+        internal static bool WriteSparseConfig(FileInfo sparseFile, IEnumerable<SparsePath> maps)
         {
             Debug.Assert(sparseFile != null, "The `sparseFile` parameter is null.");
             Debug.Assert(maps != null, "The `maps` parameter is null.");
-            Debug.Assert(nots != null, "The `nots` parameter is null.");
 
             Trace.WriteLine("Program::WriteSparseConfig");
 
@@ -579,25 +495,17 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                     stream.Write(buffer, 0, length);
                     stream.Write(eol, 0, eol.Length);
                 }
-
-                foreach (string value in nots)
-                {
-                    int length = Encoding.UTF8.GetBytes(value, 0, value.Length, buffer, 0);
-                    stream.Write(buffer, 0, length);
-                    stream.Write(eol, 0, eol.Length);
-                }
             }
 
             return true;
         }
 
-        internal static bool WriteSparseConfig(GitConfiguration config, IEnumerable<string> maps, IEnumerable<string> nots)
+        internal static bool WriteSparseConfig(GitConfiguration config, IEnumerable<SparsePath> maps)
         {
             const string DotGitInfoFolderName = "info";
 
             Debug.Assert(config != null, "The `config` parameter is null.");
             Debug.Assert(maps != null, "The `maps` parameter is null.");
-            Debug.Assert(nots != null, "The `nots` parameter is null.");
 
             Trace.WriteLine("Program::WriteSparseConfig");
 
@@ -612,7 +520,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
                     FileInfo sparseFile = new FileInfo(configPath);
 
-                    return WriteSparseConfig(sparseFile, maps, nots);
+                    return WriteSparseConfig(sparseFile, maps);
                 }
 
                 Trace.WriteLine("   " + ConfigFileName + " not found.");
