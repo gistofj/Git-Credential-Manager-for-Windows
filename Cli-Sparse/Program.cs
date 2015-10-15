@@ -127,6 +127,11 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             {
                 EnableDebugTrace();
 
+                var a = new GitPathish("A/**", GitPathishType.Inclusive);
+                var b = new GitPathish("A/B/*/E/**", GitPathishType.Inclusive);
+
+                GitPathish.IsSubsumed(a, b);
+
                 Program program = new Program();
                 GitConfiguration config = new GitConfiguration();
 
@@ -142,6 +147,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                         { "clone", program.Clone },
                         { "init", program.Init },
                         { "remove", program.Remove },
+                        { "rm", program.Remove },
                     };
 
                     if (actions.ContainsKey(args[0]))
@@ -182,6 +188,57 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
             Trace.WriteLine("Program::Add");
 
+            if (args.Length == 0)
+            {
+                Err.WriteLine("Fatal: no path supplied to add.");
+                return false;
+            }
+
+            if (args.Length > 1)
+            {
+                Err.WriteLine("Fatal: unexpected parameter {0}.", args[1]);
+                return false;
+            }
+
+            GitPathish path = new GitPathish(args[0], GitPathishType.Inclusive);
+            if (GitPathish.IsNullOrEmpty(path))
+            {
+                Err.WriteLine("Fatal: The path '{0}' is invalid.", path);
+                return false;
+            }
+            else if (path[0] == '!')
+            {
+                return Remove(args, config);
+            }
+
+            GitPathishCollection paths = new GitPathishCollection();
+
+            GitPathishCollection entries;
+            if (ReadSparseConfig(config, out entries))
+            {
+                foreach (var entry in entries)
+                {
+                    paths.Add(entry);
+                }
+            }
+
+            if (paths.Add(path))
+            {
+                WriteSparseConfig(config, paths);
+            }
+            else
+            {
+                Out.Write("Warning: path already exists.");
+            }
+
+            if (!GitProcess.Run("reset", Environment.CurrentDirectory, 0)
+                    || !GitProcess.Run("read-tree -mu HEAD", Environment.CurrentDirectory, 0))
+            {
+                Err.WriteLine("Fatal: Error occured when updating the resposiory index.");
+                Err.WriteLine("       Use of `git reset` and `git update-index --really-refresh` can be helpful.");
+                return false;
+            }
+
             return true;
         }
 
@@ -206,7 +263,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             {
                 Out.WriteLine("sparse enabled.");
 
-                List<SparsePath> paths;
+                GitPathishCollection paths;
                 if (ReadSparseConfig(config, out paths))
                 {
                     foreach (string path in paths)
@@ -286,10 +343,10 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                 return false;
             }
 
-            HashSet<SparsePath> values = new HashSet<SparsePath>();
+            GitPathishCollection values = new GitPathishCollection();
             values.Add(DefaultSparseValue);
 
-            List<SparsePath> entries;
+            GitPathishCollection entries;
             List<string> refs;
 
             if (specPath != null)
@@ -339,10 +396,59 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
             Trace.WriteLine("Program::Remove");
 
+            if (args.Length == 0)
+            {
+                Err.WriteLine("Fatal: no path supplied to remove.");
+                return false;
+            }
+
+            if (args.Length > 1)
+            {
+                Err.WriteLine("Fatal: unexpected parameter {0}.", args[1]);
+                return false;
+            }
+
+            GitPathish path = new GitPathish(args[0], GitPathishType.Exclusive);
+            if (GitPathish.IsNullOrEmpty(path))
+            {
+                Err.WriteLine("Fatal: The path '{0}' is invalid.", path);
+                return false;
+            }
+
+            path.IsExclusive = true;
+
+            GitPathishCollection paths = new GitPathishCollection();
+
+            GitPathishCollection entries;
+            if (ReadSparseConfig(config, out entries))
+            {
+                foreach (var entry in entries)
+                {
+                    paths.Add(entry);
+                }
+            }
+
+            if (paths.Add(path))
+            {
+                WriteSparseConfig(config, paths);
+            }
+            else
+            {
+                Out.Write("Warning: path already exists.");
+            }
+
+            if (!GitProcess.Run("reset", Environment.CurrentDirectory, 0)
+                    || !GitProcess.Run("read-tree -mu HEAD", Environment.CurrentDirectory, 0))
+            {
+                Err.WriteLine("Fatal: Error occured when updating the resposiory index.");
+                Err.WriteLine("       Use of `git reset` and `git update-index --really-refresh` can be helpful.");
+                return false;
+            }
+
             return true;
         }
 
-        internal static bool ReadSparseConfig(FileInfo sparseFile, out List<SparsePath> paths)
+        internal static bool ReadSparseConfig(FileInfo sparseFile, out GitPathishCollection paths)
         {
             Debug.Assert(sparseFile != null, "The `sparseFile` parameter is null.");
             Debug.Assert(sparseFile.Exists, "The `sparseFile` parameter does not exist.");
@@ -351,7 +457,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
             if (sparseFile.Exists)
             {
-                paths = new List<SparsePath>();
+                paths = new GitPathishCollection();
 
                 Trace.WriteLine("   " + ConfigFileName + " found.");
 
@@ -376,7 +482,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             return false;
         }
 
-        internal static bool ReadSparseConfig(GitConfiguration config, out List<SparsePath> paths)
+        internal static bool ReadSparseConfig(GitConfiguration config, out GitPathishCollection paths)
         {
             const string DotGitInfoFolderName = "info";
 
@@ -410,7 +516,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             return false;
         }
 
-        internal static bool ReadSpecFile(FileInfo specFile, out List<SparsePath> paths, out List<string> refs)
+        internal static bool ReadSpecFile(FileInfo specFile, out GitPathishCollection paths, out List<string> refs)
         {
             Debug.Assert(specFile != null, "The `specFile` parameter is null.");
             Debug.Assert(specFile.Exists, "The `specFile` parameter do not exist.");
@@ -419,7 +525,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
 
             if (specFile.Exists)
             {
-                paths = new List<SparsePath>();
+                paths = new GitPathishCollection();
                 refs = new List<string>();
 
                 Trace.WriteLine("   '" + specFile.FullName + "' found.");
@@ -472,7 +578,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
                 && String.Equals(config[ConfigValueName], "true", StringComparison.OrdinalIgnoreCase);
         }
 
-        internal static bool WriteSparseConfig(FileInfo sparseFile, IEnumerable<SparsePath> maps)
+        internal static bool WriteSparseConfig(FileInfo sparseFile, GitPathishCollection maps)
         {
             Debug.Assert(sparseFile != null, "The `sparseFile` parameter is null.");
             Debug.Assert(maps != null, "The `maps` parameter is null.");
@@ -500,7 +606,7 @@ namespace Microsoft.TeamFoundation.SparseCheckout
             return true;
         }
 
-        internal static bool WriteSparseConfig(GitConfiguration config, IEnumerable<SparsePath> maps)
+        internal static bool WriteSparseConfig(GitConfiguration config, GitPathishCollection maps)
         {
             const string DotGitInfoFolderName = "info";
 

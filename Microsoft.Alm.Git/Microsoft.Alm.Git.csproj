@@ -48,11 +48,13 @@
   <ItemGroup>
     <Compile Include="GitConfiguration.cs" />
     <Compile Include="GitInstallation.cs" />
+    <Compile Include="GitPathishCollection.cs" />
+    <Compile Include="GitPathishType.cs" />
     <Compile Include="GitProcess.cs" />
     <Compile Include="GitProcessOptions.cs" />
     <Compile Include="KnownGitDistribution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SparsePath.cs" />
+    <Compile Include="GitPathish.cs" />
     <Compile Include="Where.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
