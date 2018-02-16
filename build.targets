@@ -10,9 +10,12 @@
     <Message Text="AssemblyName = $(AssemblyName)" />
     <Message Text="OutputType = $(OutputType)" />
     <Message Text="SignType = $(SignType)" />
+    <Message Text="OutputPath = $(OutputPath)" />
+    <Message Text="IntermediateOutputPath = $(IntermediateOutputPath)" />
+    <Message Text="TargetFramework = $(TargetFramework)" />
   </Target>
   <Target Name="RemoveDirectories" AfterTargets="CoreClean">
-    <Delete Files="$(OutputPath)\*.*;$(IntermediateOutputPath)\*.*" />
+    <Delete Files="$(OutputPath.TrimEnd('\'))\*.*;$(IntermediateOutputPath.TrimEnd('\'))\*.*" />
     <RemoveDir Directories="$(IntermediateOutputPath);$(OutputPath)"/>
   </Target>
 </Project>

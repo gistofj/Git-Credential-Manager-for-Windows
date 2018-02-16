@@ -1,32 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <Import Project="..\packages\MicroBuild.Core.0.2.0\build\MicroBuild.Core.props" Condition="Exists('..\packages\MicroBuild.Core.0.2.0\build\MicroBuild.Core.props')" />
   <Import Project="..\packages\Microsoft.Net.Compilers.2.6.1\build\Microsoft.Net.Compilers.props" Condition="Exists('..\packages\Microsoft.Net.Compilers.2.6.1\build\Microsoft.Net.Compilers.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+  <PropertyGroup Label="Globals">
     <AssemblyName>Microsoft.Alm.Git</AssemblyName>
-    <NuGetPackageImportStamp />
     <OutputType>Library</OutputType>
-    <ProjectGuid>{19770407-5C58-406D-AB3F-3700BB0D06FE}</ProjectGuid>
+    <ProjectGuid>19770407-0415-406D-AB3F-3700BB0D06FE</ProjectGuid>
     <RootNamespace>Microsoft.Alm.Git</RootNamespace>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RuntimeIdentifier>win7</RuntimeIdentifier>
+    <TargetFrameworks>netstandard2.0;net451</TargetFrameworks>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <Import Project="..\build.props" />
   <PropertyGroup>
-    <ProjectDir>$(MSBuildThisFileDirectory)</ProjectDir>
-    <OutputPath>$(ProjectDir)$(OutputPath)</OutputPath>
-    <SigningTarget>$(OutputPath)\$(AssemblyName).dll</SigningTarget>
+    <ProjectDir>$(MSBuildThisFileDirectory.TrimEnd('\'))\</ProjectDir>
+    <IntermediateOutputPath>$(ProjectDir.TrimEnd('\'))\$(IntermediateOutputPath.TrimEnd('\'))\</IntermediateOutputPath>
+    <OutputPath>$(ProjectDir.TrimEnd('\'))\$(OutputPath.TrimEnd('\'))\</OutputPath>
+    <SigningTarget>$(OutputPath.TrimEnd('\'))\$(AssemblyName).dll</SigningTarget>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration.cs" />
     <Compile Include="ConfigurationLevel.cs" />
@@ -48,9 +40,18 @@
       <InProject>false</InProject>
     </FilesToSign>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="Microsoft.Net.Compilers" Version="2.6.1" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.4.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <Import Project="..\build.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

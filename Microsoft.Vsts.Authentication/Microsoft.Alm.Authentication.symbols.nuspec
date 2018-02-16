@@ -24,8 +24,8 @@
     <file src="Microsoft.Alm.Git.pdb" target="lib\net451\Microsoft.Alm.Git.pdb" />
     <file src="Microsoft.Alm.Authentication.pdb" target="lib\net451\Microsoft.Alm.Authentication.pdb" />
     <file src="Microsoft.Vsts.Authentication.pdb" target="lib\net451\Microsoft.Vsts.Authentication.pdb" />
-    <file src="..\..\..\Microsoft.Alm.Authentication\**\*.cs" target="src\Microsoft.Alm.Authentication" exclude="**\obj\**\*.cs" />
-    <file src="..\..\..\Microsoft.Alm.Git\**\*.cs" target="src\Microsoft.Alm.Git" exclude="**\obj\**\*.cs" />
-    <file src="..\..\..\Microsoft.Vsts.Authentication\**\*.cs" target="src\Microsoft.Vsts.Authentication" exclude="**\obj\**\*.cs" />
+    <file src="..\..\..\..\..\Microsoft.Alm.Authentication\**\*.cs" target="src\Microsoft.Alm.Authentication" exclude="**\obj\**\*.cs" />
+    <file src="..\..\..\..\..\Microsoft.Alm.Git\**\*.cs" target="src\Microsoft.Alm.Git" exclude="**\obj\**\*.cs" />
+    <file src="..\..\..\..\..\Microsoft.Vsts.Authentication\**\*.cs" target="src\Microsoft.Vsts.Authentication" exclude="**\obj\**\*.cs" />
   </files>
 </package>

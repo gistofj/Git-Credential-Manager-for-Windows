@@ -6,31 +6,36 @@
   </PropertyGroup>
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CodeAnalysisRuleSet>..\analysisRules.ruleset</CodeAnalysisRuleSet>
-    <FileAlignment>512</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CopyNuGetImplementations>false</CopyNuGetImplementations>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' Or '$(Configuration)' == '*Undefined*' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' Or  '$(Platform)' == '*Undefined*' " >AnyCPU</Platform>
     <SolutionDir Condition=" '$(SolutionDir)' == '' Or '$(SolutionDir)' == '*Undefined*' " >$(MSBuildThisFileDirectory)</SolutionDir>
+    <TargetFramework Condition=" '(TargetFramework)' == '' Or '$(TargetFramework)' == '*Undefined*' ">$(Platform)</TargetFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
+    <IntermediateOutputPath>obj\Debug\$(TargetFramework)</IntermediateOutputPath>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Debug\$(TargetFramework)</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
+    <IntermediateOutputPath>obj\Release\$(TargetFramework)</IntermediateOutputPath>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\Release\$(TargetFramework)</OutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
   </PropertyGroup>
