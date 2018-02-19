@@ -38,6 +38,7 @@ namespace Microsoft.Alm.Authentication
         /// Return a `<see cref="Credential"/>` for resource access if successful; otherwise `<see langword="null"/>`.
         /// </summary>
         /// <param name="targetUri">The URI of the VSTS resource.</param>
+        /// <param name="options">Options related to the logon operation.</param>
         Task<Credential> InteractiveLogon(TargetUri targetUri, PersonalAccessTokenOptions options);
 
         /// <summary>

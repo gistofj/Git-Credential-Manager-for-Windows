@@ -67,17 +67,23 @@ namespace Microsoft.Alm.Authentication
 
         protected readonly IReadOnlyList<string> _scopes;
 
+        /// <summary>
+        /// Returns `<see langword="true"/>` if `<paramref name="lhs"/>` is equal to `<paramref name="rhs"/>`.
+        /// </summary>
+        /// <param name="lhs">The left-hand side of the equality check.</param>
+        /// <param name="rhs">The right-hand side of the equality check.</param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static bool Equals(TokenScope left, TokenScope right)
+        protected static bool Equals(TokenScope lhs, TokenScope rhs)
         {
-            if (ReferenceEquals(left, right))
+            if (ReferenceEquals(lhs, rhs))
                 return true;
-            if (ReferenceEquals(left, null) || ReferenceEquals(null, right))
+            if (ReferenceEquals(lhs, null) || ReferenceEquals(null, rhs))
                 return false;
 
             ScopeSet set = new ScopeSet();
-            set.UnionWith(left._scopes);
-            return set.SetEquals(right._scopes);
+            set.UnionWith(lhs._scopes);
+            return set.SetEquals(rhs._scopes);
         }
 
         protected static bool Equals(TokenScope left, object right)
@@ -105,6 +111,9 @@ namespace Microsoft.Alm.Authentication
             return set;
         }
 
+        /// <summary>
+        /// Returns the hash code for `<paramref name="value"/>`.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static int GetHashCode(TokenScope value)
         {
@@ -125,6 +134,9 @@ namespace Microsoft.Alm.Authentication
             return hash;
         }
 
+        /// <summary>
+        /// Returns the hash code for this value.
+        /// </summary>
         public override int GetHashCode()
             => GetHashCode(this);
 

@@ -31,6 +31,9 @@ using ScopeSet = System.Collections.Generic.HashSet<string>;
 
 namespace Microsoft.Alm.Authentication
 {
+    /// <summary>
+    /// Represents the scope or permissions requested / granted to a token when requested from VSTS.
+    /// </summary>
     public class VstsTokenScope : TokenScope
     {
         public static readonly VstsTokenScope None = new VstsTokenScope(string.Empty);
@@ -185,9 +188,13 @@ namespace Microsoft.Alm.Authentication
             return vstsScope != null;
         }
 
+        /// <summary>
+        /// Returns the hash code for this value.
+        /// </summary>
         public override int GetHashCode()
             => TokenScope.GetHashCode(this as TokenScope);
 
+#pragma warning disable 1591
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(VstsTokenScope left, VstsTokenScope right)
             => TokenScope.Equals(left as TokenScope, right as TokenScope);
@@ -230,5 +237,6 @@ namespace Microsoft.Alm.Authentication
             var set = TokenScope.SymmetricExceptWith(left as TokenScope, right as TokenScope);
             return new VstsTokenScope(set);
         }
+#pragma warning restore 1591
     }
 }

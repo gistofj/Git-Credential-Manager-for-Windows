@@ -276,7 +276,7 @@ namespace Microsoft.Alm.Authentication
         /// <summary>
         /// Determines whether the `<see cref="QueryUri"/>` is a base of the specified `<see cref="Uri"/>`.
         /// <para/>
-        /// Returns `<see langword="true"/>` if is a base of `<param name="uri"/>`; otherwise, `<see langword="false"/>`.
+        /// Returns `<see langword="true"/>` if is a base of `<paramref name="uri"/>`; otherwise, `<see langword="false"/>`.
         /// </summary>
         /// <param name="uri">The `<see cref="Uri"/>` to test.</param>
         public bool IsBaseOf(Uri uri)
@@ -287,9 +287,8 @@ namespace Microsoft.Alm.Authentication
         /// <summary>
         /// Determines whether the `<see cref="QueryUri"/>` is a base of the specified `<paramref name="targetUri"/>`.
         /// <para/>
-        /// Returns `<see langword="true"/>` if is a base of `<param name="uri"/>`; otherwise, `<see langword="false"/>`.
+        /// Returns `<see langword="true"/>` if is a base of `<param name="targetUri"/>`; otherwise, `<see langword="false"/>`.
         /// </summary>
-        /// <param name="targetUri">The `<see cref="TargetUri"/>` to test.</param>
         public bool IsBaseOf(TargetUri targetUri)
         {
             if (targetUri == null)

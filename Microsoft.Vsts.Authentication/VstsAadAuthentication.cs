@@ -44,7 +44,6 @@ namespace Microsoft.Alm.Authentication
         /// </param>
         /// <param name="tokenScope">The scope of all access tokens acquired by the authority.</param>
         /// <param name="personalAccessTokenStore">The secure secret store for storing any personal access tokens acquired.</param>
-        /// <param name="adaRefreshTokenStore">The secure secret store for storing any Azure tokens acquired.</param>
         public VstsAadAuthentication(
             Guid tenantId,
             VstsTokenScope tokenScope,
@@ -83,6 +82,7 @@ namespace Microsoft.Alm.Authentication
         /// Return a `<see cref="Credential"/>` for resource access if successful; otherwise `<see langword="null"/>`.
         /// </summary>
         /// <param name="targetUri">The URI of the VSTS resource.</param>
+        /// <param name="options">Options related to the logon operation.</param>
         public async Task<Credential> InteractiveLogon(TargetUri targetUri, PersonalAccessTokenOptions options)
         {
             BaseSecureStore.ValidateTargetUri(targetUri);

@@ -43,7 +43,7 @@ namespace Microsoft.Alm.Authentication
         /// <para>The token must not have the user's security identifier (SID) disabled.</para>
         /// </summary>
         /// <param name="credential">
-        /// A pointer to the ` <see cref="Credential)"/>` structure to be written.
+        /// A pointer to the `<see cref="Authentication.Credential"/>` structure to be written.
         /// </param>
         /// <param name="flags">Flags that control the function's operation. Must be set to 0.</param>
         /// <returns>True if success; false otherwise.</returns>
@@ -117,8 +117,11 @@ namespace Microsoft.Alm.Authentication
             [In][MarshalAs(UnmanagedType.U4)] CredentialType type,
             [In] uint flags);
 
-        /// <summary> The CredFree function frees a buffer returned by any of the credentials
-        /// management functions. </summary> <param name="buffer"Pointer to the buffer to be freed.></param>
+        /// <summary>
+        /// The CredFree function frees a buffer returned by any of the credentials
+        /// management functions.
+        /// </summary>
+        /// <param name="credential">Pointer to the buffer to be freed.</param>
         [DllImport(Advapi32, CharSet = CharSet.Unicode, EntryPoint = "CredFree", SetLastError = true)]
         internal static extern void CredFree(
             [In] IntPtr credential);
@@ -169,52 +172,33 @@ namespace Microsoft.Alm.Authentication
         internal enum CredentialFlags : uint
         {
             /// <summary>
-            /// <para>
-            /// Bit set if the ` <see cref="Credential"/>` does not persist the `
-            /// <see cref="Credential.CredentialBlob"/>` and the credential has not been written
+            /// Bit set if the ` <see cref="Credential"/>` does not persist the `<see cref="Credential.CredentialBlob"/>` and the credential has not been written
             /// during this logon session. This bit is ignored on input and is set automatically when queried.
-            /// </para>
-            /// <para>
-            /// If ` <see cref="Credential.Type"/>` is
-            /// <see cref="CredentialType.DomainCertificate"/>, the `
-            /// <see cref="Credential.CredentialBlob"/>` is not persisted across logon sessions
+            /// <para />
+            /// If `<see cref="Credential.Type"/>` is `<see cref="CredentialType.DomainCertificate"/>`, the `<see cref="Credential.CredentialBlob"/>` is not persisted across logon sessions
             /// because the PIN of a certificate is very sensitive information.
-            /// </para>
-            /// <para>
+            /// <para />
             /// Indeed, when the credential is written to credential manager, the PIN is passed to
             /// the CSP associated with the certificate. The CSP will enforce a PIN retention policy
             /// appropriate to the certificate.
-            /// </para>
-            /// <para>
-            /// If Type is ` <see cref="CredentialType.DomainPassword"/>` or `
-            /// <see cref="CredentialType.DomainCertificate"/>`, an authentication package always
-            /// fails an authentication attempt when using credentials marked as ` <see cref="CredentialFlags.PromptNow"/>`.
-            /// </para>
-            /// <para>
+            /// <para />
+            /// If Type is `<see cref="CredentialType.DomainPassword"/>` or `<see cref="CredentialType.DomainCertificate"/>`, an authentication package always
+            /// fails an authentication attempt when using credentials marked as `<see cref="CredentialFlags.PromptNow"/>`.
+            /// <para />
             /// The application (typically through the key ring UI) prompts the user for the
             /// password. The application saves the credential and retries the authentication.
-            /// </para>
-            /// <para>
+            /// <para />
             /// Because the credential has been recently written, the authentication package now gets
-            /// a credential that is not marked as ` <see cref="CredentialFlags.PromptNow"/>`.
-            /// </para>
+            /// a credential that is not marked as `<see cref="CredentialFlags.PromptNow"/>`.
             /// </summary>
             PromptNow = 0x02,
 
             /// <summary>
-            /// <para>
-            /// Bit is set if this ` <see cref="Credential"/>` has a `
-            /// <see cref="Credential.TargetName"/>` member set to the same value as the `
-            /// <see cref="Credential.UserName"/>` member.
-            /// </para>
-            /// <para>
-            /// Such a credential is one designed to store the `
-            /// <see cref="Credential.CredentialBlob"/>` for a specific user.
-            /// </para>
-            /// <para>
-            /// This bit can only be specified if ` <see cref="Credential.Type"/>` is `
-            /// <see cref="CredentialType.DomainPassword"/>` or <see cref="CredentialType.DomainCertificate"/>.
-            /// </para>
+            /// Bit is set if this `<see cref="Credential"/>` has a `<see cref="Credential.TargetName"/>` member set to the same value as the `<see cref="Credential.UserName"/>` member.
+            /// <para />
+            /// Such a credential is one designed to store the `<see cref="Credential.CredentialBlob"/>` for a specific user.
+            /// <para />
+            /// This bit can only be specified if ` <see cref="Credential.Type"/>` is `<see cref="CredentialType.DomainPassword"/>` or `<see cref="CredentialType.DomainCertificate"/>`.
             /// </summary>
             UsernameTarget = 0x04,
         }
@@ -222,7 +206,7 @@ namespace Microsoft.Alm.Authentication
         internal enum CredentialPersist : uint
         {
             /// <summary>
-            /// <para>The ` <see cref="Credential"/>` persists for the life of the logon session.</para>
+            /// <para>The `<see cref="Credential"/>` persists for the life of the logon session.</para>
             /// <para>It will not be visible to other logon sessions of this same user.</para>
             /// <para>It will not exist after this user logs off and back on.</para>
             /// </summary>
@@ -230,7 +214,7 @@ namespace Microsoft.Alm.Authentication
 
             /// <summary>
             /// <para>
-            /// The ` <see cref="Credential"/>` persists for all subsequent logon sessions on this
+            /// The `<see cref="Credential"/>` persists for all subsequent logon sessions on this
             /// same computer.
             /// </para>
             /// <para>
@@ -246,7 +230,7 @@ namespace Microsoft.Alm.Authentication
 
             /// <summary>
             /// <para>
-            /// The ` <see cref="Credential"/>` persists for all subsequent logon sessions on this
+            /// The `<see cref="Credential"/>` persists for all subsequent logon sessions on this
             /// same computer.
             /// </para>
             /// <para>
@@ -263,59 +247,51 @@ namespace Microsoft.Alm.Authentication
 
         internal enum CredentialType : uint
         {
-            /// <summary> <para>The `<see cref="Credential"/>` is a generic credential. The
-            /// credential will not be used by any particular authentication package.</para>
-            /// <para>The credential will be stored securely but has no other significant
-            /// characteristics.<para> </summary>
+            /// <summary> 
+            /// The `<see cref="Credential"/>` is a generic credential. The
+            /// credential will not be used by any particular authentication package.
+            /// <para />
+            /// The credential will be stored securely but has no other significant
+            /// characteristics.
+            /// </summary>
             Generic = 0x01,
 
             /// <summary>
-            /// <para>
-            /// The ` <see cref="Credential"/>` is a password credential and is specific to
+            /// The `<see cref="Credential"/>` is a password credential and is specific to
             /// Microsoft's authentication packages.
-            /// </para>
-            /// <para>
+            /// <para />
             /// The NTLM, Kerberos, and Negotiate authentication packages will automatically use this
             /// credential when connecting to the named target.
-            /// </para>
             /// </summary>
             DomainPassword = 0x02,
 
             /// <summary>
-            /// <para>
-            /// The ` <see cref="Credential"/>` is a certificate credential and is specific to
+            /// The `<see cref="Credential"/>` is a certificate credential and is specific to
             /// Microsoft's authentication packages.
-            /// </para>
-            /// <para>
-            /// The Kerberos, Negotiate, and Schannel authentication packages automatically use this
+            /// <para />
+            /// The Kerberos, Negotiate, and SChannel authentication packages automatically use this
             /// credential when connecting to the named target.
-            /// </para>
             /// </summary>
             DomainCertificate = 0x03,
 
             /// <summary>
-            /// <para>
-            /// The ` <see cref="Credential"/>` is a password credential and is specific to
+            /// The `<see cref="Credential"/>` is a password credential and is specific to
             /// authentication packages from Microsoft.
-            /// </para>
-            /// <para>
+            /// <para />
             /// The Passport authentication package will automatically use this credential when
             /// connecting to the named target.
-            /// </para>
             /// </summary>
             [Obsolete("This value is no longer supported", true)]
             DomainVisiblePassword = 0x04,
 
             /// <summary>
-            /// <para>
-            /// The ` <see cref="Credential"/>` is a certificate credential that is a generic
+            /// The `<see cref="Credential"/>` is a certificate credential that is a generic
             /// authentication package.
-            /// </para>
             /// </summary>
             GenericCertificate = 0x05,
 
             /// <summary>
-            /// <para>The ` <see cref="Credential"/>` is supported by extended Negotiate packages.</para>
+            /// The `<see cref="Credential"/>` is supported by extended Negotiate packages.
             /// </summary>
             /// <remarks>
             /// Windows Server 2008, Windows Vista, Windows Server 2003, and Windows XP: This value
@@ -323,16 +299,18 @@ namespace Microsoft.Alm.Authentication
             /// </remarks>
             DomainExtended = 0x06,
 
-            /// <summary> <para>The maximum number of supported credential types.<para> </summary>
-            /// <remarks> Windows Server 2008, Windows Vista, Windows Server 2003, and Windows XP:
-            /// This value is not supported. </remarks>
+            /// <summary>
+            /// The maximum number of supported credential types.
+            /// </summary>
+            /// <remarks>
+            /// Windows Server 2008, Windows Vista, Windows Server 2003, and Windows XP:
+            /// This value is not supported.
+            /// </remarks>
             Maximum = 0x07,
 
             /// <summary>
-            /// <para>
             /// The extended maximum number of supported credential types that now allow new
             /// applications to run on older operating systems.
-            /// </para>
             /// </summary>
             /// <remarks>
             /// Windows Server 2008, Windows Vista, Windows Server 2003, and Windows XP: This value
@@ -351,19 +329,16 @@ namespace Microsoft.Alm.Authentication
             internal const int UsernameMaxLength = 511;
 
             /// <summary>
-            /// <para>A bit member that identifies characteristics of the credential.</para>
-            /// <para>
+            /// A bit member that identifies characteristics of the credential.
+            /// <para />
             /// Undefined bits should be initialized as zero and not otherwise altered to permit
             /// future enhancement.
-            /// </para>
             /// </summary>
             [MarshalAs(UnmanagedType.U4)]
             public CredentialFlags Flags;
 
             /// <summary>
-            /// <para>
             /// The type of the credential. This member cannot be changed after the credential is created.
-            /// </para>
             /// </summary>
             [MarshalAs(UnmanagedType.U4)]
             public CredentialType Type;
@@ -372,114 +347,100 @@ namespace Microsoft.Alm.Authentication
             public string TargetName;
 
             /// <summary>
-            /// <para>A string comment from the user that describes this credential.</para>
-            /// <para>This member cannot be longer than ` <see cref="StringMaxLength"/>` characters.</para>
+            /// A string comment from the user that describes this credential.
+            /// <para />
+            /// This member cannot be longer than `<see cref="StringMaxLength"/>` characters.
             /// </summary>
             [MarshalAs(UnmanagedType.LPWStr)]
             public string Comment;
 
             /// <summary>
-            /// <para>
             /// The time, in Coordinated Universal Time (Greenwich Mean Time), of the last
             /// modification of the credential.
-            /// </para>
-            /// <para>For write operations, the value of this member is ignored.</para>
+            /// <para />
+            /// For write operations, the value of this member is ignored.
             /// </summary>
             public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
 
             /// <summary>
-            /// <para>The size, in bytes, of the ` <see cref="CredentialBlob"/>` member.</para>
-            /// <para>This member cannot be larger than ` <see cref="PasswordMaxLength"/>` bytes.</para>
+            /// The size, in bytes, of the `<see cref="CredentialBlob"/>` member.
+            /// <para />
+            /// This member cannot be larger than `<see cref="PasswordMaxLength"/>` bytes.
             /// </summary>
             public uint CredentialBlobSize;
 
             /// <summary>
-            /// <para>
             /// Secret data for the credential. The CredentialBlob member can be both read and written.
-            /// </para>
-            /// <para>
-            /// If the ` <see cref="Type"/>` member is `
-            /// <see cref="CredentialType.DomainPassword"/>`, this member contains the plaintext
-            /// Unicode password for ` <see cref="UserName"/>`.
-            /// </para>
-            /// <para>
+            /// <para />
+            /// If the `<see cref="Type"/>` member is `<see cref="CredentialType.DomainPassword"/>`, this member contains the plain-text
+            /// Unicode password for `<see cref="UserName"/>`.
+            /// <para />
             /// The ` <see cref="CredentialBlob"/>` and ` <see cref="CredentialBlobSize"/>` members
             /// do not include a trailing zero character.
-            /// </para>
-            /// <para>
+            /// <para />
             /// Also, for ` <see cref="CredentialType.DomainPassword"/>`, this member can only be
             /// read by the authentication packages.
-            /// </para>
-            /// <para>
+            /// <para />
             /// If the Type member is ` <see cref="CredentialType.DomainCertificate"/>`, this member
             /// contains the clear test Unicode PIN for ` <see cref="UserName"/>`.
-            /// </para>
-            /// <para>
+            /// <para />
             /// The ` <see cref="CredentialBlob"/>` and ` <see cref="CredentialBlobSize"/>` members
             /// do not include a trailing zero character.
-            /// </para>
-            /// <para>Also, this member can only be read by the authentication packages.</para>
-            /// <para>
-            /// If the ` <see cref="Type"/>` member is ` <see cref="CredentialType.Generic"/>`, this
+            /// <para />
+            /// Also, this member can only be read by the authentication packages.
+            /// <para />
+            /// If the ` <see cref="Type"/>` member is `<see cref="CredentialType.Generic"/>`, this
             /// member is defined by the application.
-            /// </para>
-            /// <para>
+            /// <para />
             /// Credentials are expected to be portable. Applications should ensure that the data in
             /// ` <see cref="CredentialBlob"/>` is portable.
-            /// </para>
             /// </summary>
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
             public IntPtr CredentialBlob;
 
             /// <summary>
-            /// <para>Defines the persistence of this credential. This member can be read and written.</para>
+            /// Defines the persistence of this credential. This member can be read and written.
             /// </summary>
             [MarshalAs(UnmanagedType.U4)]
             public CredentialPersist Persist;
 
             /// <summary>
-            /// <para>The number of application-defined attributes to be associated with the credential.</para>
-            /// <para>This member can be read and written. Its value cannot be greater than ` <see cref="AttributeMaxLengh"/>`.</para>
+            /// The number of application-defined attributes to be associated with the credential.
+            /// <para />
+            /// This member can be read and written. Its value cannot be greater than ` <see cref="AttributeMaxLengh"/>`.
             /// </summary>
             public uint AttributeCount;
 
             /// <summary>
-            /// <para>
             /// Application-defined attributes that are associated with the credential. This member
             /// can be read and written.
-            /// </para>
             /// </summary>
             public IntPtr Attributes;
 
             /// <summary>
-            /// <para>
             /// Alias for the TargetName member. This member can be read and written. It cannot be
-            /// longer than ` <see cref="StringMaxLength"/>` characters.
-            /// </para>
-            /// <para>
-            /// If the credential Type is ` <see cref="CredentialType.Generic"/>`, this member can be
+            /// longer than `<see cref="StringMaxLength"/>` characters.
+            /// <para />
+            /// If the credential Type is `<see cref="CredentialType.Generic"/>`, this member can be
             /// non-NULL, but the credential manager ignores the member.
-            /// </para>
             /// </summary>
             [MarshalAs(UnmanagedType.LPWStr)]
             public string TargetAlias;
 
             /// <summary>
-            /// <para>The user name of the account used to connect to TargetName.</para>
-            /// <para>
-            /// If the credential Type is ` <see cref="CredentialType.DomainPassword"/>`, this member
+            /// The user name of the account used to connect to TargetName.
+            /// <para />
+            /// If the credential Type is `<see cref="CredentialType.DomainPassword"/>`, this member
             /// can be either a DomainName\UserName or a UPN.
-            /// </para>
-            /// <para>
-            /// If the credential Type is ` <see cref="CredentialType.DomainCertificate"/>`, this
+            /// <para />
+            /// If the credential Type is `<see cref="CredentialType.DomainCertificate"/>`, this
             /// member must be a marshaled certificate reference created by calling
             /// `CredMarshalCredential` with a `CertCredential`.
-            /// </para>
-            /// <para>
-            /// If the credential Type is ` <see cref="CredentialType.Generic"/>`, this member can be
+            /// <para />
+            /// If the credential Type is `<see cref="CredentialType.Generic"/>`, this member can be
             /// non-NULL, but the credential manager ignores the member.
-            /// </para>
-            /// <para>This member cannot be longer than CRED_MAX_USERNAME_LENGTH(513) characters.</para>
+            /// <para />
+            /// This member cannot be longer than CRED_MAX_USERNAME_LENGTH(513) characters.
             /// </summary>
             [MarshalAs(UnmanagedType.LPWStr)]
             public string UserName;
@@ -487,9 +448,10 @@ namespace Microsoft.Alm.Authentication
 
         /// <summary>
         /// Closes an open object handle.
+        /// <para />
+        /// Returns `<see langword="true"/>` if successful; otherwise `<see langword="false"/>`.
         /// </summary>
         /// <param name="handle">A valid handle to an open object.</param>
-        /// <returns>True is successful; otherwise false.</returns>
         [DllImport(Kernel32, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, EntryPoint = "CloseHandle", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CloseHandle(
@@ -497,9 +459,10 @@ namespace Microsoft.Alm.Authentication
 
         /// <summary>
         /// Closes an open object handle.
+        /// <para />
+        /// Returns `<see langword="true"/>` if successful; otherwise `<see langword="false"/>`.
         /// </summary>
         /// <param name="handle">A valid handle to an open object.</param>
-        /// <returns>True is successful; otherwise false.</returns>
         [DllImport(Kernel32, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, EntryPoint = "CloseHandle", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CloseHandle(

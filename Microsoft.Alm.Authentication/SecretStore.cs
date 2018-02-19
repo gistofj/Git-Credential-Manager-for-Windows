@@ -34,7 +34,7 @@ namespace Microsoft.Alm.Authentication
     public sealed class SecretStore : BaseSecureStore, ICredentialStore, ITokenStore
     {
         /// <summary>
-        /// Creates a new <see cref="SecretStore"/> backed by the operating system keychain / secrets vault.
+        /// Creates a new <see cref="SecretStore"/> backed by the operating system key-chain / secrets vault.
         /// </summary>
         /// <param name="namespace">The namespace of the secrets written and read by this store.</param>
         /// <param name="credentialCache">
@@ -43,6 +43,7 @@ namespace Microsoft.Alm.Authentication
         /// <param name="tokenCache">
         /// Write-through, read-first cache. Default cache is used if a custom cache is not provided.
         /// </param>
+        /// <param name="getTargetName">Delegate used to transform a `<see cref="TargetUri"/>` into a `<see cref="string"/>` for querying an `<see cref="ICredentialStore"/>`.</param>
         public SecretStore(string @namespace, ICredentialStore credentialCache, ITokenStore tokenCache, Secret.UriNameConversion getTargetName)
         {
             if (string.IsNullOrWhiteSpace(@namespace))
@@ -121,7 +122,6 @@ namespace Microsoft.Alm.Authentication
         /// Reads credentials for a target URI from the credential store
         /// </summary>
         /// <param name="targetUri">The URI of the target for which credentials are being read</param>
-        /// <param name="credentials"></param>
         /// <returns>A <see cref="Credential"/> from the store is successful; otherwise <see langword="null"/>.</returns>
         public Credential ReadCredentials(TargetUri targetUri)
         {

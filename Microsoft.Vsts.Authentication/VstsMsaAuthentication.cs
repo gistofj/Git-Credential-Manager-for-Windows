@@ -32,9 +32,14 @@ namespace Microsoft.Alm.Authentication
 {
     public sealed class VstsMsaAuthentication : BaseVstsAuthentication, IVstsMsaAuthentication
     {
-        public const string DefaultAuthorityHost = AzureAuthority.AuthorityHostUrlBase + "/live.com";
+        internal const string DefaultAuthorityHost = AzureAuthority.AuthorityHostUrlBase + "/live.com";
         internal const string QueryParameters = "domain_hint=live.com&display=popup&site_id=501454&nux=1";
 
+        /// <summary>
+        /// Creates a new instance of `<see cref="VstsMsaAuthentication"/>`.
+        /// </summary>
+        /// <param name="tokenScope">The `<see cref="VstsTokenScope"/>` to use when creating a new personal access token.</param>
+        /// <param name="personalAccessTokenStore">The store to read/write any personal access tokens from/to.</param>
         public VstsMsaAuthentication(VstsTokenScope tokenScope, ICredentialStore personalAccessTokenStore)
             : base(tokenScope, personalAccessTokenStore)
         {
@@ -44,8 +49,7 @@ namespace Microsoft.Alm.Authentication
         /// <summary>
         /// Test constructor which allows for using fake credential stores
         /// </summary>
-        /// <param name="personalAccessTokenStore"></param>
-        /// <param name="adaRefreshTokenStore"></param>
+        /// <param name="personalAccessTokenStore">The store to read/write any personal access tokens from/to.</param>
         /// <param name="vstsIdeTokenCache"></param>
         /// <param name="liveAuthority"></param>
         internal VstsMsaAuthentication(
