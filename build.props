@@ -10,7 +10,6 @@
     <FileAlignment>512</FileAlignment>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>

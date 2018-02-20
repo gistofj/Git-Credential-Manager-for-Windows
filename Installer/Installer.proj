@@ -1,5 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Microsoft.Net.Compilers.2.6.1\build\Microsoft.Net.Compilers.props" Condition="Exists('..\packages\Microsoft.Net.Compilers.2.6.1\build\Microsoft.Net.Compilers.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="..\packages\MicroBuild.Core.0.2.0\build\MicroBuild.Core.props" Condition="Exists('..\packages\MicroBuild.Core.0.2.0\build\MicroBuild.Core.props')" />
   <PropertyGroup Label="Globals">
@@ -7,10 +8,13 @@
     <RootNamespace>Installer</RootNamespace>
     <ProjectDir Condition=" '$(ProjectDir)' == '' Or '$(ProjectDir)' == '*Undefined*' ">$(MSBuildProjectDirectory)</ProjectDir>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' Or '$(Configuration)' == '*Undefined*' "></Configuration>
-    <Platform Condition=" '$(Platform)' == '' Or  '$(Platform)' == '*Undefined*' " >AnyCPU</Platform>
+    <Configuration Condition=" '$(Configuration)' == '' Or '$(Configuration)' == '*Undefined*' ">
+    </Configuration>
+    <Platform Condition=" '$(Platform)' == '' Or  '$(Platform)' == '*Undefined*' ">AnyCPU</Platform>
     <SolutionDir Condition=" '$(SolutionDir)' == '' Or '$(SolutionDir)' == '*Undefined*' ">$([System.IO.Directory]::GetParent($(ProjectDir)))</SolutionDir>
     <InputPath Condition=" '$(Configuration)' == 'Debug' ">bin\Debug</InputPath>
     <InputPath Condition=" '$(Configuration)' == 'Release' ">bin\Release</InputPath>
@@ -108,10 +112,12 @@
       <InProject>false</InProject>
     </ZipContents>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Target Name="AfterBuild" AfterTargets="Build" />
   <Target Name="Build" BeforeTargets="AfterBuild">
     <MSBuild Projects="@(ProjectReference)" Targets="Build" />
-
     <!-- need to declare the items after dependencies have built, so that glob enumeration happens after the files are produced-->
     <ItemGroup>
       <FilesToCopy Include="$(SolutionDir)\Cli-CredentialHelper\$(InputPath)\*.*">
@@ -128,7 +134,6 @@
       </FilesToCopy>
       <FilesToCopy Include="$(ProjectDir)\Setup.iss" />
     </ItemGroup>
-
     <MakeDir Directories="$(IntermediateOutputPath)" />
     <MakeDir Directories="$(OutputPath)" />
     <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(IntermediateOutputPath)" />
@@ -138,8 +143,8 @@
     <Zip Files="@(ZipContents)" Flatten="True" ZipFileName="$(OutputPath)\gcmw-v$(Version).zip" WorkingDirectory="$(IntermediateOutputPath)ZipContents" ZipLevel="9" />
   </Target>
   <Target Name="Clean">
-    <RemoveDir Directories="$(IntermediateOutputPath);$(OutputPath)"/>
-    <RemoveDir Directories="$(SolutionDir)\TestResults"/>
+    <RemoveDir Directories="$(IntermediateOutputPath);$(OutputPath)" />
+    <RemoveDir Directories="$(SolutionDir)\TestResults" />
   </Target>
   <Target Name="Rebuild" AfterTargets="Clean" BeforeTargets="Build" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -152,6 +157,7 @@
     <Error Condition="!Exists('..\packages\Pandoc.Windows.2.1.0\tools\Pandoc\pandoc.exe')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Pandoc.Windows.2.1.0\tools\Pandoc\pandoc.exe'))" />
     <Error Condition="!Exists('..\packages\Tools.InnoSetup.5.5.9\tools\iscc.exe')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Tools.InnoSetup.5.5.9\tools\iscc.exe'))" />
     <Error Condition="!Exists('..\packages\Tools.InnoSetup.Download.1.5.1\tools\InnoDownload\idp.iss')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Tools.InnoSetup.Download.1.5.1\tools\InnoDownload\idp.iss'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Net.Compilers.2.6.1\build\Microsoft.Net.Compilers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Net.Compilers.2.6.1\build\Microsoft.Net.Compilers.props'))" />
   </Target>
   <Target Name="EnsureResourcesExist" BeforeTargets="PrepareForBuild">
     <Error Condition="!Exists('$(SolutionDir)\Cli-CredentialHelper\Properties\AssemblyInfo.cs)')" Text="File not found: '$(SolutionDir)\Cli-CredentialHelper\Properties\AssemblyInfo.cs)'." />
