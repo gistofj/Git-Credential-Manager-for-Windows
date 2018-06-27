@@ -31,6 +31,8 @@ using Microsoft.Alm.Win32;
 using Microsoft.Win32;
 using static System.StringComparer;
 using static System.Diagnostics.Debug;
+using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
+using Microsoft.Win32.SafeHandles;
 
 namespace Microsoft.Alm.Authentication
 {
@@ -151,7 +153,7 @@ namespace Microsoft.Alm.Authentication
         /// Returns a byte array containing the contents of the file.
         /// </summary>
         /// <param name="path">The file to open for reading.</param>
-        byte[] FileReadAllBytes(string path);
+        byte[ ] FileReadAllBytes(string path);
 
         /// <summary>
         /// Opens a file, reads all lines of the file with the specified encoding, and then closes the file.
@@ -177,7 +179,7 @@ namespace Microsoft.Alm.Authentication
         /// </summary>
         /// <param name="path">The file to write to.</param>
         /// <param name="bytes">The bytes to write to the file.</param>
-        void FileWriteAllBytes(string path, byte[] data);
+        void FileWriteAllBytes(string path, byte[ ] data);
 
         /// <summary>
         /// Creates a new file, writes the specified string to the file using the specified encoding, and then closes the file.
@@ -201,7 +203,7 @@ namespace Microsoft.Alm.Authentication
         /// <summary>
         /// Returns an array of paths to all known drive roots.
         /// </summary
-        string[] GetDriveRoots();
+        string[ ] GetDriveRoots();
 
         /// <summary>
         /// Returns the file name and extension of the specified path string.
@@ -303,7 +305,7 @@ namespace Microsoft.Alm.Authentication
         /// <para/>
         /// This information is encrypted, and will be decrypted, by the operating system.
         /// </param>
-        bool TryReadSecureData(string key, out string name, out byte[] data);
+        bool TryReadSecureData(string key, out string name, out byte[ ] data);
 
         /// <summary>
         /// Writes data to the operating system's secure storage.
@@ -323,7 +325,7 @@ namespace Microsoft.Alm.Authentication
         /// <para/>
         /// This information will be encrypted by the operating system.
         /// </param>
-        bool TryWriteSecureData(string key, string name, byte[] data);
+        bool TryWriteSecureData(string key, string name, byte[ ] data);
     }
 
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay, nq}")]
@@ -331,7 +333,7 @@ namespace Microsoft.Alm.Authentication
     {
         internal static readonly SecureDataComparer Comparer = SecureDataComparer.Instance;
 
-        internal SecureData(string key, string name, byte[] data)
+        internal SecureData(string key, string name, byte[ ] data)
         {
             _data = data;
             _key = key;
@@ -339,11 +341,11 @@ namespace Microsoft.Alm.Authentication
         }
 
         private byte[] _data;
-        private string _key;
-        private string _name;
+        private readonly string _key;
+        private readonly string _name;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays")]
-        public byte[] Data
+        public byte[ ] Data
         {
             get { return _data; }
         }
@@ -433,10 +435,64 @@ namespace Microsoft.Alm.Authentication
             => typeof(IStorage);
 
         public void CreateDirectory(string path)
-            => Directory.CreateDirectory(path);
+        {
+            if (path is null)
+                throw new ArgumentNullException(nameof(path));
+
+            if (!Win32CreateDirectory(path: path,
+                                  optional: IntPtr.Zero))
+            {
+                int error = Marshal.GetLastWin32Error();
+
+                switch (error)
+                {
+                    case 0x05 /* Access denied */:
+                        throw new UnauthorizedAccessException();
+
+                    case 0x0F /* Invalid drive */:
+                        throw new DriveNotFoundException();
+
+                    case 0x50 /* File exists */:
+                        throw new IOException($"File '{path}' already exists.");
+
+                    case 0x7B /* Invalid path */:
+                    case 0xA1 /* Bad path */:
+                    case 0x10B /* Invalid directory */:
+                        throw new ArgumentException($"'{path}' is invalid.", nameof(path));
+
+                    case 0xB7 /* Already exists */:
+                        break;
+                }
+            }
+        }
 
         public bool DirectoryExists(string path)
-            => Directory.Exists(path);
+        {
+            if (path is null)
+                throw new ArgumentNullException(nameof(path));
+
+            if (!Win32GetFileAttributes(path: path,
+                                       level: Win32AttributesLevel.Standard,
+                                        data: out Win32FileAttributeData data))
+            {
+                int error = Marshal.GetLastWin32Error();
+
+                switch (error)
+                {
+                    case 0x02 /* File not found */:
+                    case 0x03 /* Path not found */:
+                        return false;
+
+                    case 0x05 /* Access denied */:
+                        throw new UnauthorizedAccessException(path);
+                }
+            }
+
+            if ((int)data.FileAttributes == -1)
+                return false;
+
+            return (data.FileAttributes & FileAttributes.Directory) != 0;
+        }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path, string pattern, SearchOption options)
             => Directory.EnumerateFileSystemEntries(path, pattern, options);
@@ -495,19 +551,137 @@ namespace Microsoft.Alm.Authentication
         public void FileCopy(string sourcePath, string destinationPath)
             => FileCopy(sourcePath, destinationPath, false);
 
-        public void FileCopy(string sourcePath, string destinationPath, bool overwrite)
-            => File.Copy(sourcePath, destinationPath, overwrite);
+        public void FileCopy(string sourcePath, string targetPath, bool overwrite)
+        {
+            if (sourcePath is null)
+                throw new ArgumentNullException(nameof(sourcePath));
+            if (targetPath is null)
+                throw new ArgumentNullException(nameof(targetPath));
+
+            if (!Win32CopyFile(sourcePath: sourcePath,
+                               targetPath: targetPath,
+                             fileIfExists: !overwrite))
+            {
+                int error = Marshal.GetLastWin32Error();
+
+                switch (error)
+                {
+                    case 0x02 /* File not found */:
+                        throw new FileNotFoundException();
+
+                    case 0x03 /* Path not found */:
+                    case 0x7B /* Invalid path */:
+                    case 0xA1 /* Bad path */:
+                    case 0x10B /* Invalid directory */:
+                        throw new DirectoryNotFoundException();
+
+                    case 0x05 /* Access denied */:
+                        throw new UnauthorizedAccessException();
+
+                    case 0x0F /* Invalid drive */:
+                        throw new DriveNotFoundException();
+
+                    case 0x50 /* File exists */:
+                    case 0xB7 /* Already exists */:
+                        throw new IOException($"File '{targetPath}' already exists.");
+                }
+            }
+        }
 
         public void FileDelete(string path)
-            => File.Delete(path);
+        {
+            if (path is null)
+                throw new ArgumentNullException(nameof(path));
+
+            if (!Win32DeleteFile(path: path))
+            {
+                int error = Marshal.GetLastWin32Error();
+
+                switch (error)
+                {
+                    case 0x02 /* File not found */:
+                        break;
+
+                    case 0x05 /* Access denied */:
+                        throw new UnauthorizedAccessException(path);
+                }
+            }
+        }
 
         public bool FileExists(string path)
-            => File.Exists(path);
+        {
+            if (path is null)
+                throw new ArgumentNullException(nameof(path));
+
+            if (!Win32GetFileAttributes(path: path,
+                                       level: Win32AttributesLevel.Standard,
+                                        data: out Win32FileAttributeData data))
+            {
+                int error = Marshal.GetLastWin32Error();
+
+                switch (error)
+                {
+                    case 0x02 /* File not found */:
+                    case 0x03 /* Path not found */:
+                        return false;
+
+                    case 0x05 /* Access denied */:
+                        throw new UnauthorizedAccessException(path);
+                }
+            }
+
+            if ((int)data.FileAttributes == -1)
+                return false;
+
+            return (data.FileAttributes & FileAttributes.Directory) == 0;
+        }
 
         public Stream FileOpen(string path, FileMode mode, FileAccess access, FileShare share)
-            => File.Open(path, mode, access, share);
+        {
+            if (path is null)
+                throw new ArgumentNullException(nameof(mode));
+            if (mode < FileMode.CreateNew || mode > FileMode.Append)
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            if (access < FileAccess.Read || access > FileAccess.ReadWrite)
+                throw new ArgumentOutOfRangeException(nameof(access));
+            if ((share & ~(FileShare.Delete | FileShare.Inheritable | FileShare.Read | FileShare.Write)) > 0)
+                throw new ArgumentOutOfRangeException(nameof(share));
 
-        public byte[] FileReadAllBytes(string path)
+            SafeFileHandle handle = Win32CreateFile(path: path,
+                                                  access: access,
+                                                   share: share,
+                                                optional: IntPtr.Zero,
+                                                    mode: mode,
+                                                   flags: default(uint),
+                                                reserved: IntPtr.Zero);
+
+            if (handle.IsInvalid)
+            {
+                int error = Marshal.GetLastWin32Error();
+
+                switch (error)
+                {
+                    case 0x02 /* File not found */:
+                        throw new FileNotFoundException();
+
+                    case 0x03 /* Path not found */:
+                    case 0x7B /* Invalid path */:
+                    case 0xA1 /* Bad path */:
+                    case 0x10B /* Invalid directory */:
+                        throw new DirectoryNotFoundException();
+
+                    case 0x05 /* Access denied */:
+                        throw new UnauthorizedAccessException();
+
+                    case 0x0F /* Invalid drive */:
+                        throw new DriveNotFoundException();
+                }
+            }
+
+            return new FileStream(handle, access, 4096);
+        }
+
+        public byte[ ] FileReadAllBytes(string path)
             => File.ReadAllBytes(path);
 
         public string FileReadAllText(string path, System.Text.Encoding encoding)
@@ -516,7 +690,7 @@ namespace Microsoft.Alm.Authentication
         public string FileReadAllText(string path)
             => FileReadAllText(path, System.Text.Encoding.UTF8);
 
-        public void FileWriteAllBytes(string path, byte[] bytes)
+        public void FileWriteAllBytes(string path, byte[ ] bytes)
             => File.WriteAllBytes(path, bytes);
 
         public void FileWriteAllText(string path, string contents, System.Text.Encoding encoding)
@@ -525,7 +699,7 @@ namespace Microsoft.Alm.Authentication
         public void FileWriteAllText(string path, string contents)
             => FileWriteAllText(path, contents, System.Text.Encoding.UTF8);
 
-        public string[] GetDriveRoots()
+        public string[ ] GetDriveRoots()
         {
             var drives = DriveInfo.GetDrives();
             var paths = new string[drives.Length];
@@ -621,7 +795,7 @@ namespace Microsoft.Alm.Authentication
             return purgeCount;
         }
 
-        public bool TryReadSecureData(string key, out string name, out byte[] data)
+        public bool TryReadSecureData(string key, out string name, out byte[ ] data)
         {
             const string NoSuchSessionMessage = "The logon session does not exist or there is no credential set associated with this logon session. Network logon sessions do not have an associated credential set.";
 
@@ -668,7 +842,7 @@ namespace Microsoft.Alm.Authentication
             return false;
         }
 
-        public bool TryWriteSecureData(string key, string name, byte[] data)
+        public bool TryWriteSecureData(string key, string name, byte[ ] data)
         {
             const string BadUsernameMessage = "The UserName member of the passed in Credential structure is not valid.";
             const string NoSuchSessionMessage = "The logon session does not exist or there is no credential set associated with this logon session. Network logon sessions do not have an associated credential set.";
@@ -704,10 +878,10 @@ namespace Microsoft.Alm.Authentication
                 switch (errorCode)
                 {
                     case ErrorCode.NoSuchLogonSession:
-                    throw new InvalidOperationException(NoSuchSessionMessage);
+                        throw new InvalidOperationException(NoSuchSessionMessage);
 
                     case ErrorCode.BadUserName:
-                    throw new ArgumentException(BadUsernameMessage, nameof(name));
+                        throw new ArgumentException(BadUsernameMessage, nameof(name));
                 }
             }
             finally
@@ -720,5 +894,63 @@ namespace Microsoft.Alm.Authentication
 
             return false;
         }
+
+        private const string Kernel32Dll = "kernel32.dll";
+
+        private enum Win32AttributesLevel : uint
+        {
+            Standard,
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private unsafe struct Win32FileAttributeData
+        {
+            readonly uint _fileAttributes;
+            FILETIME _creationTime;
+            FILETIME _lastAccessTime;
+            FILETIME _lastWriteTime;
+            readonly uint _fileSizeHigh;
+            readonly uint _fileSizeLow;
+
+            public FileAttributes FileAttributes
+            {
+                get { return unchecked((FileAttributes)_fileAttributes); }
+            }
+        }
+
+        [DllImport(Kernel32Dll, BestFitMapping = false, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, EntryPoint = "CopyFileW", ExactSpelling = true, PreserveSig = true, SetLastError = true, ThrowOnUnmappableChar = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool Win32CopyFile(
+            [In, MarshalAs(UnmanagedType.LPWStr)] string sourcePath,
+            [In, MarshalAs(UnmanagedType.LPWStr)] string targetPath,
+            [In, MarshalAs(UnmanagedType.Bool)] bool fileIfExists);
+
+        [DllImport(Kernel32Dll, BestFitMapping = false, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, EntryPoint = "CreateDirectoryW", ExactSpelling = true, PreserveSig = true, SetLastError = true, ThrowOnUnmappableChar = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool Win32CreateDirectory(
+            [In, MarshalAs(UnmanagedType.LPWStr)] string path,
+            [In, Optional] IntPtr optional);
+
+        [DllImport(Kernel32Dll, BestFitMapping = false, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, EntryPoint = "CreateFileW", ExactSpelling = true, PreserveSig = true, SetLastError = true, ThrowOnUnmappableChar = true)]
+        public static extern SafeFileHandle Win32CreateFile(
+            [In, MarshalAs(UnmanagedType.LPWStr)] string path,
+            [In, MarshalAs(UnmanagedType.U4)] FileAccess access,
+            [In, MarshalAs(UnmanagedType.U4)] FileShare share,
+            [In, Optional] IntPtr optional,
+            [In, MarshalAs(UnmanagedType.U4)] FileMode mode,
+            [In, MarshalAs(UnmanagedType.U4)] uint flags,
+            [In, Optional] IntPtr reserved);
+
+        [DllImport(Kernel32Dll, BestFitMapping = false, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, EntryPoint = "DeleteFileW", ExactSpelling = true, PreserveSig = true, SetLastError = true, ThrowOnUnmappableChar = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool Win32DeleteFile(
+            [In, MarshalAs(UnmanagedType.LPWStr)] string path);
+
+        [DllImport(Kernel32Dll, BestFitMapping = false, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, EntryPoint = "GetFileAttributesExW", ExactSpelling = true, PreserveSig = true, SetLastError = true, ThrowOnUnmappableChar = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool Win32GetFileAttributes(
+            [In, MarshalAs(UnmanagedType.LPWStr)] string path,
+            [In, MarshalAs(UnmanagedType.U4)] Win32AttributesLevel level,
+            [Out] out Win32FileAttributeData data);
     }
 }
