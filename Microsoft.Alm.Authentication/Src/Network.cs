@@ -72,6 +72,14 @@ namespace Microsoft.Alm.Authentication
 
     public class NetworkRequestOptions
     {
+        internal const string AcceptName = "accept";
+        internal const string AcceptValue = "*/*";
+        internal const string AcceptEncodingName = "accept-encoding";
+        internal const string AcceptEncodingDeflate = "deflate";
+        internal const string AcceptEncodingGzip = "gzip";
+        internal const string CacheControlName = "cache-control";
+        internal const string CacheControlValue = "no-cache";
+
         public NetworkRequestOptions(bool setDefaults)
             : this()
         {
@@ -96,6 +104,8 @@ namespace Microsoft.Alm.Authentication
             var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
 
             _headers = (HttpRequestHeaders)assembly.CreateInstance(type.FullName, false, flags, null, new object[0], null, null);
+            _headers.Add(AcceptName, AcceptValue);
+            _headers.Add(CacheControlName, CacheControlValue);
         }
 
         private Secret _authentication;

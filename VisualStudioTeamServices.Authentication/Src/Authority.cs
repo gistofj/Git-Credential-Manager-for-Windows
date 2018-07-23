@@ -24,14 +24,15 @@
 **/
 
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Alm.Authentication;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using Culture = System.Globalization.CultureInfo;
 using static System.StringComparer;
+using Culture = System.Globalization.CultureInfo;
 
 namespace VisualStudioTeamServices.Authentication
 {
@@ -309,114 +310,19 @@ namespace VisualStudioTeamServices.Authentication
         {
             if (targetUri is null)
                 throw new ArgumentNullException(nameof(targetUri));
-            if (credentials is null)
-                return false;
 
-            try
-            {
-                // Create an request to the VSTS deployment data end-point.
-                var requestUri = GetConnectionDataUri(targetUri);
-                var options = new NetworkRequestOptions(true)
-                {
-                    Authorization = credentials,
-                };
-
-                // Send the request and wait for the response.
-                using (var response = await Network.HttpGetAsync(requestUri, options))
-                {
-                    if (response.IsSuccessStatusCode)
-                        return true;
-
-                    Trace.WriteLine($"credential validation for '{targetUri}' failed [{(int)response.StatusCode} {response.ReasonPhrase}].");
-
-                    // Even if the service responded, if the issue isn't a 400 class response then
-                    // the credentials were likely not rejected.
-                    if ((int)response.StatusCode < 400 || (int)response.StatusCode >= 500)
-                    {
-                        Trace.WriteLine($"unable to validate credentials for '{targetUri}', unexpected response [{(int)response.StatusCode} {response.ReasonPhrase}].");
-
-                        return true;
-                    }
-
-                    Trace.WriteLine($"credential validation for '{targetUri}' failed [{(int)response.StatusCode} {response.ReasonPhrase}].");
-
-                    return false;
-                }
-            }
-            catch (HttpRequestException exception)
-            {
-                // Since we're unable to invalidate the credentials, return optimistic results.
-                // This avoid credential invalidation due to network instability, etc.
-                Trace.WriteLine($"unable to validate credentials for '{targetUri}', failure occurred before server could respond.");
-                Trace.WriteException(exception);
-
-                return true;
-            }
-            catch (Exception exception)
-            {
-                Trace.WriteException(exception);
-            };
-
-            Trace.WriteLine($"credential validation for '{targetUri}' failed.");
-            return false;
+            return await ValidateSecret(targetUri, credentials);
         }
 
         public async Task<bool> ValidateToken(TargetUri targetUri, Token token)
         {
             if (targetUri is null)
                 throw new ArgumentNullException(nameof(targetUri));
-            if (token is null)
-                return false;
 
             // Personal access tokens are effectively credentials, treat them as such.
-            if (token.Type == TokenType.Personal)
-                return await ValidateCredentials(targetUri, (Credential)token);
-
-            try
-            {
-                // Create an request to the VSTS deployment data end-point.
-                var requestUri = GetConnectionDataUri(targetUri);
-                var options = new NetworkRequestOptions(true)
-                {
-                    Authorization = token,
-                };
-
-                // Send the request and wait for the response.
-                using (var response = await Network.HttpGetAsync(requestUri, options))
-                {
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        // Even if the service responded, if the issue isn't a 400 class response then
-                        // the credentials were likely not rejected.
-                        if ((int)response.StatusCode < 400 || (int)response.StatusCode >= 500)
-                        {
-                            Trace.WriteLine($"unable to validate credentials for '{targetUri}', unexpected response [{(int)response.StatusCode} {response.ReasonPhrase}].");
-
-                            return true;
-                        }
-
-                        Trace.WriteLine($"credential validation for '{targetUri}' failed [{(int)response.StatusCode} {response.ReasonPhrase}].");
-
-                        return false;
-                    }
-                }
-            }
-            catch (HttpRequestException exception)
-            {
-                // Since we're unable to invalidate the credentials, return optimistic results.
-                // This avoid credential invalidation due to network instability, etc.
-                Trace.WriteLine($"unable to validate credentials for '{targetUri}', failure occurred before server could respond.");
-                Trace.WriteException(exception);
-
-                return true;
-            }
-            catch (Exception exception)
-            {
-                Trace.WriteException(exception);
-            };
-
-            Trace.WriteLine($"token validation for '{targetUri}' failed.");
-            return false;
+            return (token.Type == TokenType.Personal)
+                ? await ValidateSecret(targetUri, (Credential)token)
+                : await ValidateSecret(targetUri, token);
         }
 
         internal static TargetUri GetConnectionDataUri(TargetUri targetUri)
@@ -522,6 +428,74 @@ namespace VisualStudioTeamServices.Authentication
                     || OrdinalIgnoreCase.Equals(targetUri.Scheme, Uri.UriSchemeHttps))
                 && (targetUri.DnsSafeHost.EndsWith(VstsBaseUrlHost, StringComparison.OrdinalIgnoreCase)
                     || targetUri.DnsSafeHost.EndsWith(AzureBaseUrlHost, StringComparison.OrdinalIgnoreCase));
+        }
+
+        internal async Task<bool> ValidateSecret(TargetUri targetUri, Secret secret)
+        {
+            const string AnonymousUserPattern = @"""properties""\s*:\s*{\s*""Account""\s*:\s*{\s*""\$type""\s*:\s*""System.String""\s*,\s*""\$value""\s*:\s*""Anonymous""}\s*}";
+
+            if (targetUri is null)
+                throw new ArgumentNullException(nameof(targetUri));
+
+            if (secret is null)
+                return false;
+
+            // Create an request to the VSTS deployment data end-point.
+            var requestUri = GetConnectionDataUri(targetUri);
+            var options = new NetworkRequestOptions(true)
+            {
+                Authorization = secret,
+                CookieContainer = new CookieContainer(),
+            };
+
+            try
+            {
+                // Send the request and wait for the response.
+                using (var response = await Network.HttpGetAsync(requestUri, options))
+                {
+                    HttpStatusCode statusCode = response.StatusCode;
+                    string content = await response?.Content?.ReadAsStringAsync();
+
+                    // If the server responds with content, and said content matches the anonymous details the credentials are invalid.
+                    if (statusCode == HttpStatusCode.OK
+                        && content != null
+                        && Regex.IsMatch(content, AnonymousUserPattern, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase))
+                    {
+                        Trace.WriteLine($"credential validation for '{targetUri}' failed.");
+
+                        return false;
+                    }
+
+                    // If the service responded with a 2XX status code the credentials are valid.
+                    if (statusCode >= HttpStatusCode.OK && statusCode < HttpStatusCode.Ambiguous)
+                        return true;
+
+                    Trace.WriteLine($"credential validation for '{targetUri}' failed [{(int)response.StatusCode}].");
+
+                    // Even if the service responded, if the issue isn't a 400 class response then the credentials were likely not rejected.
+                    if (statusCode < HttpStatusCode.BadRequest || statusCode >= HttpStatusCode.InternalServerError)
+                        return true;
+                }
+            }
+            catch (HttpRequestException exception)
+            {
+                // Since we're unable to invalidate the credentials, return optimistic results.
+                // This avoid credential invalidation due to network instability, etc.
+                Trace.WriteLine($"unable to validate credentials for '{targetUri}', failure occurred before server could respond.");
+                Trace.WriteException(exception);
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Trace.WriteLine($"credential validation for '{targetUri}' failed.");
+                Trace.WriteException(exception);
+
+                return false;
+            }
+
+            Trace.WriteLine($"credential validation for '{targetUri}' failed.");
+            return false;
         }
 
         private async Task<TargetUri> CreatePersonalAccessTokenRequestUri(TargetUri targetUri, Secret authorization, bool requireCompactToken)
