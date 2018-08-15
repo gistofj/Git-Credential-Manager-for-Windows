@@ -47,6 +47,7 @@ namespace Microsoft.Alm.Cli
             : base(context)
         {
             _authorityType = AuthorityType.Auto;
+            _httpTimeout = Global.RequestTimeout;
             _interactivity = Interactivity.Auto;
             _useLocalConfig = true;
             _useHttpPath = true;
@@ -71,6 +72,7 @@ namespace Microsoft.Alm.Cli
         private string _customNamespace;
         private Dictionary<string, string> _environmentVariables;
         private string _gitRemoteHttpCommandLine;
+        private int _httpTimeout;
         private Interactivity _interactivity;
         private IntPtr _parentHwnd;
         private bool _preserveCredentials;
@@ -166,6 +168,28 @@ namespace Microsoft.Alm.Cli
 
                 // Re-create the target Uri.
                 CreateTargetUri();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the timeout for network requests.
+        /// <para/>
+        /// The value must a positive value greater than `<seealso cref="TimeSpan.Zero"/>`.
+        /// <para/>
+        /// The default values is `<see cref="Global.RequestTimeout"/>`.
+        /// </summary>
+        public virtual TimeSpan HttpTimeout
+        {
+            get { return TimeSpan.FromMilliseconds(_httpTimeout); }
+            set
+            {
+                int temp = (int)value.TotalMilliseconds;
+
+                if (temp <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(HttpTimeout));
+
+
+                _httpTimeout = temp;
             }
         }
 
@@ -820,7 +844,7 @@ namespace Microsoft.Alm.Cli
                     case ',':
                     case ';':
                     case '=':
-                    return true;
+                        return true;
                 }
             }
             return false;
