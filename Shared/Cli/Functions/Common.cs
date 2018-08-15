@@ -643,6 +643,26 @@ namespace Microsoft.Alm.Cli
                 {
                     operationArguments.UrlOverride = value;
                 }
+                else
+                {
+                    program.Trace.WriteLine($"failed to parse {program.KeyTypeName(KeyType.UrlOverride)}.");
+                }
+            }
+
+            // Check for network request timeout settings.
+            if (program.TryReadString(operationArguments, KeyType.HttpTimeout, out value))
+            {
+                program.Trace.WriteLine($"{program.KeyTypeName(KeyType.UrlOverride)} = '{value}'.");
+
+                if (TryParse(value, out int actualValue)
+                    && actualValue > 0)
+                {
+                    operationArguments.HttpTimeout = TimeSpan.FromSeconds(actualValue);
+                }
+                else
+                {
+                    program.Trace.WriteLine($"expected number of seconds, '{value}' is invalid.");
+                }
             }
         }
 
