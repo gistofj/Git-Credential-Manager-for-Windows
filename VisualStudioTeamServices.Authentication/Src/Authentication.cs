@@ -210,7 +210,6 @@ namespace VisualStudioTeamServices.Authentication
                 var options = new NetworkRequestOptions(false)
                 {
                     Flags = NetworkRequestOptionFlags.UseProxy,
-                    Timeout = TimeSpan.FromMilliseconds(Global.RequestTimeout),
                 };
 
                 try
