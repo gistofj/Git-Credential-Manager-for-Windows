@@ -620,7 +620,7 @@ namespace Microsoft.Alm.Cli
             }
 
             // Check for parent window handles in the environment.
-            if (operationArguments.EnvironmentVariables.TryGetValue(string.Empty, out value))
+            if (operationArguments.EnvironmentVariables.TryGetValue(program.EnvironmentKeys[KeyType.ParentHwnd], out value))
             {
                 Trace.WriteLine($"{program.KeyTypeName(KeyType.ParentHwnd)} = '{value}'");
 
@@ -652,16 +652,17 @@ namespace Microsoft.Alm.Cli
             // Check for network request timeout settings.
             if (program.TryReadString(operationArguments, KeyType.HttpTimeout, out value))
             {
-                program.Trace.WriteLine($"{program.KeyTypeName(KeyType.UrlOverride)} = '{value}'.");
+                program.Trace.WriteLine($"{program.KeyTypeName(KeyType.HttpTimeout)} = '{value}'.");
 
                 if (TryParse(value, out int actualValue)
                     && actualValue > 0)
                 {
                     operationArguments.HttpTimeout = TimeSpan.FromSeconds(actualValue);
+                    program.Context.Network.RequestTimeout = operationArguments.HttpTimeout;
                 }
                 else
                 {
-                    program.Trace.WriteLine($"expected number of seconds, '{value}' is invalid.");
+                    program.Trace.WriteLine($"failed to parse {program.KeyTypeName(KeyType.HttpTimeout)}.");
                 }
             }
         }
