@@ -99,7 +99,7 @@ namespace Microsoft.Alm.Authentication
                        | NetworkRequestOptionFlags.UseProxy;
                 _headers.Add("User-Agent", Global.UserAgent);
                 _maxRedirections = Global.MaxAutomaticRedirections;
-                Timeout = TimeSpan.FromMilliseconds(Global.RequestTimeout);
+                _timeout = TimeSpan.Zero;
             }
         }
 
@@ -295,6 +295,11 @@ namespace Microsoft.Alm.Authentication
     public interface INetwork : IRuntimeService
     {
         /// <summary>
+        /// Gets or sets the maximum wait time for a network request before timing out.
+        /// </summary>
+        TimeSpan RequestTimeout { get; set; }
+
+        /// <summary>
         /// Send a GET request, using `<paramref name="options"/>`, to the specified server as an asynchronous operation.
         /// <para/>
         /// Returns a task to get the response from the server.
@@ -352,10 +357,19 @@ namespace Microsoft.Alm.Authentication
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1823:AvoidUnusedPrivateFields")]
         private static readonly AuthenticationHeaderValue[] NullResult = new AuthenticationHeaderValue[0];
+        private static readonly TimeSpan RequestTimeoutMinimum = TimeSpan.FromMilliseconds(1);
 
         public Network(RuntimeContext context)
             : base(context)
         { }
+
+        private TimeSpan _requestTimeout;
+
+        public TimeSpan RequestTimeout
+        {
+            get { return _requestTimeout; }
+            set {  _requestTimeout = value; }
+        }
 
         public Type ServiceType
             => typeof(INetwork);
@@ -526,10 +540,13 @@ namespace Microsoft.Alm.Authentication
 
             if (options != null)
             {
-                if (options.Timeout > TimeSpan.Zero)
-                {
-                    httpClient.Timeout = options.Timeout;
-                }
+                // Set the client timeout to the value submitted by `options`, the value of this `Network` instance,
+                // or the global default value.
+                httpClient.Timeout = (options.Timeout > RequestTimeoutMinimum)
+                    ? options.Timeout
+                    : (RequestTimeout > RequestTimeoutMinimum)
+                        ? RequestTimeout
+                        : TimeSpan.FromMilliseconds(Global.RequestTimeout);
 
                 if (options.Headers != null)
                 {

@@ -47,6 +47,12 @@ namespace Microsoft.Alm.Authentication.Test
         private readonly Dictionary<CaptureNetwork.StringPair, Dictionary<string, Queue<CapturedNetworkQuery>>> _captured;
         private readonly RuntimeContext _context;
 
+        public TimeSpan RequestTimeout
+        {
+            get { return TimeSpan.FromMilliseconds(Global.RequestTimeout); }
+            set { }
+        }
+
         public string ServiceName
             => "Network";
 

@@ -100,6 +100,12 @@ namespace Microsoft.Alm.Authentication.Test
         private int _queryOridinal;
         private readonly object _syncpoint;
 
+        public TimeSpan RequestTimeout
+        {
+            get { return _network.RequestTimeout; }
+            set { _network.RequestTimeout = value; }
+        }
+
         public string ServiceName
             => "Network";
 
