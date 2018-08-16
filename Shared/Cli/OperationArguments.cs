@@ -47,7 +47,7 @@ namespace Microsoft.Alm.Cli
             : base(context)
         {
             _authorityType = AuthorityType.Auto;
-            _httpTimeout = Global.RequestTimeout;
+            _httpTimeout = Global.DefaultRequestTimeout;
             _interactivity = Interactivity.Auto;
             _useLocalConfig = true;
             _useHttpPath = true;
@@ -176,7 +176,7 @@ namespace Microsoft.Alm.Cli
         /// <para/>
         /// The value must a positive value greater than `<seealso cref="TimeSpan.Zero"/>`.
         /// <para/>
-        /// The default values is `<see cref="Global.RequestTimeout"/>`.
+        /// The default values is `<see cref="Global.DefaultRequestTimeout"/>`.
         /// </summary>
         public virtual TimeSpan HttpTimeout
         {

@@ -49,7 +49,7 @@ namespace Microsoft.Alm.Authentication.Test
 
         public TimeSpan RequestTimeout
         {
-            get { return TimeSpan.FromMilliseconds(Global.RequestTimeout); }
+            get { return TimeSpan.FromMilliseconds(Global.DefaultRequestTimeout); }
             set { }
         }
 

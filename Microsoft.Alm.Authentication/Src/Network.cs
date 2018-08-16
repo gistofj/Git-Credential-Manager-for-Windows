@@ -546,7 +546,7 @@ namespace Microsoft.Alm.Authentication
                     ? options.Timeout
                     : (RequestTimeout > RequestTimeoutMinimum)
                         ? RequestTimeout
-                        : TimeSpan.FromMilliseconds(Global.RequestTimeout);
+                        : TimeSpan.FromMilliseconds(Global.DefaultRequestTimeout);
 
                 if (options.Headers != null)
                 {
