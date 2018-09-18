@@ -395,188 +395,191 @@ namespace Microsoft.Alm.Authentication.Test
             if (data.Operations is null)
                 return;
 
-            foreach (var operation in data.Operations)
+            lock (_syncpoint)
             {
-                if (operation.Path is null)
-                    continue;
-
-                if (!_captures.TryGetValue(operation.Path, out Dictionary<string, Queue<CapturedStorageQuery>> methods))
+                foreach (var operation in data.Operations)
                 {
-                    methods = new Dictionary<string, Queue<CapturedStorageQuery>>(Ordinal);
-
-                    _captures.Add(operation.Path, methods);
-                }
-
-                foreach (var method in operation.Methods)
-                {
-                    if (method.MethodName is null)
+                    if (operation.Path is null)
                         continue;
 
-                    foreach (var query in method.Queries)
+                    if (!_captures.TryGetValue(operation.Path, out Dictionary<string, Queue<CapturedStorageQuery>> methods))
                     {
-                        var item = query;
+                        methods = new Dictionary<string, Queue<CapturedStorageQuery>>(Ordinal);
 
-                        switch (method.MethodName)
+                        _captures.Add(operation.Path, methods);
+                    }
+
+                    foreach (var method in operation.Methods)
+                    {
+                        if (method.MethodName is null)
+                            continue;
+
+                        foreach (var query in method.Queries)
                         {
-                            case nameof(CreateDirectory): break;
+                            var item = query;
 
-                            case nameof(DirectoryExists):
+                            switch (method.MethodName)
                             {
-                                if (query.Output is string value && bool.TryParse(value, out bool output))
-                                {
-                                    item.Output = output;
-                                }
-                            }
-                            break;
+                                case nameof(CreateDirectory): break;
 
-                            case nameof(EnumerateFileSystemEntries):
+                                case nameof(DirectoryExists):
+                                {
+                                    if (query.Output is string value && bool.TryParse(value, out bool output))
+                                    {
+                                        item.Output = output;
+                                    }
+                                }
+                                break;
+
+                                case nameof(EnumerateFileSystemEntries):
+                                {
+                                    if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
+                                    {
+                                        item.Input = jobject.ToObject<CapturedStorageQuery.EnumerateInput>();
+                                    }
+
+                                    if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
+                                    {
+                                        item.Output = jarray.ToObject<List<string>>();
+                                    }
+                                }
+                                break;
+
+                                case nameof(EnumerateSecureData):
+                                {
+                                    if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
+                                    {
+                                        item.Output = jarray.ToObject<List<CapturedStorageQuery.SecureDataOutput>>();
+                                    }
+                                }
+                                break;
+
+                                case nameof(FileCopy):
+                                {
+                                    if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
+                                    {
+                                        item.Input = jobject.ToObject<CapturedStorageQuery.CopyInput>();
+                                    }
+
+                                    if (item.Output is string value && bool.TryParse(value, out bool output))
+                                    {
+                                        item.Output = output;
+                                    }
+                                }
+                                break;
+
+                                case nameof(FileDelete): break;
+
+                                case nameof(FileExists):
+                                {
+                                    if (query.Output is string value && bool.TryParse(value, out bool output))
+                                    {
+                                        item.Output = output;
+                                    }
+                                }
+                                break;
+
+                                case nameof(FileOpen):
+                                {
+                                    if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
+                                    {
+                                        item.Input = jobject.ToObject<CapturedStorageQuery.OpenInput>();
+                                    }
+
+                                    if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
+                                    {
+                                        ;
+                                    }
+
+                                    if (query.Output is Newtonsoft.Json.Linq.JObject joutput)
+                                    {
+                                        item.Output = joutput.ToObject<CapturedStorageQuery.OpenOutput>();
+                                    }
+                                }
+                                break;
+
+                                case nameof(FileReadAllBytes):
+                                {
+                                    if (query.Output is string base64)
+                                    {
+                                        item.Output = Convert.FromBase64String(base64);
+                                    }
+                                }
+                                break;
+
+                                case nameof(FileReadAllText): break;
+
+                                case nameof(FileWriteAllBytes):
+                                {
+                                    if (query.Input is string base64)
+                                    {
+                                        item.Input = Convert.FromBase64String(base64);
+                                    }
+                                }
+                                break;
+
+                                case nameof(FileWriteAllText): break;
+
+                                case nameof(GetDriveRoots):
+                                {
+                                    if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
+                                    {
+                                        item.Output = jarray.ToObject<string[]>();
+                                    }
+                                }
+                                break;
+
+                                case nameof(GetFileName): break;
+                                case nameof(GetFullPath): break;
+                                case nameof(GetParent): break;
+
+                                case nameof(RegistryReadString):
+                                {
+                                    if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
+                                    {
+                                        item.Input = jobject.ToObject<CapturedStorageQuery.RegistryReadInput>();
+                                    }
+                                }
+                                break;
+
+                                case nameof(TryPurgeSecureData): break;
+
+                                case nameof(TryReadSecureData):
+                                {
+                                    if (query.Output is Newtonsoft.Json.Linq.JObject jobject)
+                                    {
+                                        item.Output = jobject.ToObject<CapturedStorageQuery.SecureDataOutput>();
+                                    }
+                                }
+                                break;
+
+                                case nameof(TryWriteSecureData):
+                                {
+                                    if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
+                                    {
+                                        item.Input = jobject.ToObject<CapturedStorageQuery.SecureDataInput>();
+                                    }
+
+                                    if (item.Output is string value && bool.TryParse(value, out bool output))
+                                    {
+                                        item.Output = output;
+                                    }
+                                }
+                                break;
+
+                                default:
+                                    throw new InvalidDataException($"Unknown method `{method.MethodName}`.");
+                            }
+
+                            if (!methods.TryGetValue(method.MethodName, out Queue<CapturedStorageQuery> queries))
                             {
-                                if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
-                                {
-                                    item.Input = jobject.ToObject<CapturedStorageQuery.EnumerateInput>();
-                                }
+                                queries = new Queue<CapturedStorageQuery>();
 
-                                if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
-                                {
-                                    item.Output = jarray.ToObject<List<string>>();
-                                }
+                                methods.Add(method.MethodName, queries);
                             }
-                            break;
 
-                            case nameof(EnumerateSecureData):
-                            {
-                                if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
-                                {
-                                    item.Output = jarray.ToObject<List<CapturedStorageQuery.SecureDataOutput>>();
-                                }
-                            }
-                            break;
-
-                            case nameof(FileCopy):
-                            {
-                                if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
-                                {
-                                    item.Input = jobject.ToObject<CapturedStorageQuery.CopyInput>();
-                                }
-
-                                if (item.Output is string value && bool.TryParse(value, out bool output))
-                                {
-                                    item.Output = output;
-                                }
-                            }
-                            break;
-
-                            case nameof(FileDelete): break;
-
-                            case nameof(FileExists):
-                            {
-                                if (query.Output is string value && bool.TryParse(value, out bool output))
-                                {
-                                    item.Output = output;
-                                }
-                            }
-                            break;
-
-                            case nameof(FileOpen):
-                            {
-                                if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
-                                {
-                                    item.Input = jobject.ToObject<CapturedStorageQuery.OpenInput>();
-                                }
-
-                                if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
-                                {
-                                    ;
-                                }
-
-                                if (query.Output is Newtonsoft.Json.Linq.JObject joutput)
-                                {
-                                    item.Output = joutput.ToObject<CapturedStorageQuery.OpenOutput>();
-                                }
-                            }
-                            break;
-
-                            case nameof(FileReadAllBytes):
-                            {
-                                if (query.Output is string base64)
-                                {
-                                    item.Output = Convert.FromBase64String(base64);
-                                }
-                            }
-                            break;
-
-                            case nameof(FileReadAllText): break;
-
-                            case nameof(FileWriteAllBytes):
-                            {
-                                if (query.Input is string base64)
-                                {
-                                    item.Input = Convert.FromBase64String(base64);
-                                }
-                            }
-                            break;
-
-                            case nameof(FileWriteAllText): break;
-
-                            case nameof(GetDriveRoots):
-                            {
-                                if (query.Output is Newtonsoft.Json.Linq.JArray jarray)
-                                {
-                                    item.Output = jarray.ToObject<string[ ]>();
-                                }
-                            }
-                            break;
-
-                            case nameof(GetFileName): break;
-                            case nameof(GetFullPath): break;
-                            case nameof(GetParent): break;
-
-                            case nameof(RegistryReadString):
-                            {
-                                if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
-                                {
-                                    item.Input = jobject.ToObject<CapturedStorageQuery.RegistryReadInput>();
-                                }
-                            }
-                            break;
-
-                            case nameof(TryPurgeSecureData): break;
-
-                            case nameof(TryReadSecureData):
-                            {
-                                if (query.Output is Newtonsoft.Json.Linq.JObject jobject)
-                                {
-                                    item.Output = jobject.ToObject<CapturedStorageQuery.SecureDataOutput>();
-                                }
-                            }
-                            break;
-
-                            case nameof(TryWriteSecureData):
-                            {
-                                if (query.Input is Newtonsoft.Json.Linq.JObject jobject)
-                                {
-                                    item.Input = jobject.ToObject<CapturedStorageQuery.SecureDataInput>();
-                                }
-
-                                if (item.Output is string value && bool.TryParse(value, out bool output))
-                                {
-                                    item.Output = output;
-                                }
-                            }
-                            break;
-
-                            default:
-                                throw new InvalidDataException($"Unknown method `{method.MethodName}`.");
+                            queries.Enqueue(item);
                         }
-
-                        if (!methods.TryGetValue(method.MethodName, out Queue<CapturedStorageQuery> queries))
-                        {
-                            queries = new Queue<CapturedStorageQuery>();
-
-                            methods.Add(method.MethodName, queries);
-                        }
-
-                        queries.Enqueue(item);
                     }
                 }
             }

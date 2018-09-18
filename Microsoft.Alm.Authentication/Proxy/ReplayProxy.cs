@@ -42,6 +42,7 @@ namespace Microsoft.Alm.Authentication.Test
             SetService<INetwork>(new ReplayNetwork(context));
             SetService<ISettings>(new ReplaySettings(context, NormalizePath));
             SetService<IStorage>(new ReplayStorage(context, NormalizePath));
+            SetService<Git.IUtilities>(new ReplayUtilities(context));
         }
 
         public override void ReadTestData(Stream readableStream)

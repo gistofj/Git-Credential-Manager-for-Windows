@@ -383,6 +383,8 @@ namespace Microsoft.Alm.Cli.Test
             const string protocol = "https";
             const string host = "microsoft-git-tools.visualstudio.com";
 
+            TestMode = Authentication.Test.UnitTestMode.Capture;
+
             InitializeTest();
 
             var errorBuffer = new byte[4096];

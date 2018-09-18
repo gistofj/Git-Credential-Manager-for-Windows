@@ -44,6 +44,7 @@ namespace Microsoft.Alm.Authentication.Test
             SetService<INetwork>(new CaptureNetwork(context));
             SetService<ISettings>(new CaptureSettings(context, NormalizePath));
             SetService<IStorage>(new CaptureStorage(context, NormalizePath));
+            SetService<Git.IUtilities>(new CaptureUtilities(context));
         }
 
         public override void Initialize(string repositoryPath)

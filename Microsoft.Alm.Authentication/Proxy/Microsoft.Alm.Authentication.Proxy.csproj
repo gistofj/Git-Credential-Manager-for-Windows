@@ -49,6 +49,8 @@
     <Compile Include="CaptureSettings.cs" />
     <Compile Include="CaptureStorage.cs" />
     <Compile Include="CaptureStream.cs" />
+    <Compile Include="CaptureUtilities.cs" />
+    <Compile Include="CapturedUtilitiesData.cs" />
     <Compile Include="FilterComparer.cs" />
     <Compile Include="IProxyService.cs" />
     <Compile Include="NestedDictionaryConverter.cs" />
@@ -63,6 +65,7 @@
     <Compile Include="ReplaySettings.cs" />
     <Compile Include="ReplayStorage.cs" />
     <Compile Include="ReplayStream.cs" />
+    <Compile Include="ReplayUtilities.cs" />
     <Compile Include="UnitTestBase.cs" />
     <Compile Include="UnitTestTrace.cs" />
   </ItemGroup>
